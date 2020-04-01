@@ -31,11 +31,10 @@
 #
 from coolPSSM import PSSM
 
-pssm = PSSM( )
+# let's do it in arduino style :-)
 
-print( pssm.STATE_IDLE.ID ) # done my python class hello world :-)
-print( pssm.STATE_IDLE.STR ) # done my python class hello world :-)
+pssm = PSSM( ) # always put some global object
 
-pssm.setup( )
+pssm.setup( ) # run setup
 
-pssm.loop( )
+pssm.loop( ) # run loop

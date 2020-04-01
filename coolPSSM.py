@@ -64,21 +64,41 @@ class PSSM:
     STATE_IDLE      = PSSM_STATE( 1, "IDLE" )
     STATE_RUNNING   = PSSM_STATE( 2, "RUNNING" )
 
+    MARKER_HEAD = '<' # starting marker for a command on serial line
+    MARKER_FOOT = '>' # ending marker for a command on serial line
+    MARKER_CMD = 'CMD_' # prefix for commands
+
     # Constructor
     def __init__(self):
         # The current COMMAND and the NEXT COMMAND
         self.CMD = copy.copy(self.CMD_NULL)
-        self.CMD_NEXT = copy.copy(self.CMD)
+        self.NEXT_CMD = copy.copy(self.CMD) # not necessary; for testing
         # The current STATE and the NEXT STATE
         self.STATE = copy.copy(self.STATE_IDLE)
-        self.STATE_NEXT = copy.copy(self.STATE)
+        self.NEXT_STATE = copy.copy(self.STATE) # not necessary; for testing
 
     def setup(self):
         print( "setup .." )
 
+    def welcome(self): # some how useless
+        print( "welcome .." )
+
+    def ready(self): # some how useless
+        print( "ready .." )
+
     def loop(self):
         print( "loop .." )
         while True:
-            print( "STATE: " + str(self.STATE.ID) + " " + self.STATE.STR )
-            print( "COMMAND: " + str(self.CMD.ID) + " " + self.CMD.STR )
+            next_cmd = self.process_COMMAND(self.CMD)
+            next_state = self.process_STATE(self.STATE)
             time.sleep(1)
+
+    def process_COMMAND(self, cmd):
+        next_cmd = copy.copy(self.CMD_NULL) # next is no command
+        print( "process_COMMAND" + " - " + "next_COMMAND: " + str(next_cmd.ID) + " " + next_cmd.STR )
+        return next_cmd
+
+    def process_STATE(self, state):
+        next_state = copy.copy(self.STATE) # next is this state
+        print( "process_STATE" + "   - " + "next_STATE:   " + str(next_state.ID) + " " + next_state.STR )
+        return next_state
