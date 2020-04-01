@@ -28,7 +28,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-import time, copy, serial, os, pty
+import time, copy, serial, os, pty, threading
 
 class PSSM_CMD:
     TYPE = "CMD"
@@ -71,34 +71,36 @@ class PSSM:
     MARKER_CMD = 'CMD_' # prefix for commands
 
     # Constructor
-    def __init__(self):
+    def __init__(self, port):
         # The current COMMAND and the NEXT COMMAND
         self.CMD = copy.copy(self.CMD_NULL)
         # The current STATE and the NEXT STATE
         self.STATE = copy.copy(self.STATE_IDLE)
-        # dummy serial connection for now ..
-        master, slave = pty.openpty() #open the pseudoterminal
-        slave_name = os.ttyname(slave) #translate the slave fd to a filename
-        self.ser = serial.Serial( slave_name, 2400, timeout=1 )
+        # open serial ..
+        self.ser = serial.Serial( port, 2400, timeout=1 )
 
     def setup(self):
-        print( "setup .." )
+        # print( "setup .." )
+        return ""
 
     def welcome(self): # some how useless
-        print( "welcome .." )
+        # print( "welcome .." )
+        return ""
 
     def ready(self): # some how useless
-        print( "ready .." )
+        # print( "ready .." )
+        return ""
 
     def loop(self):
-        print( "loop .." )
-        while True:
-            self.STATE = self.process_COMMAND(self.CMD)
-            print( "process_COMMAND" + " - " + "NEXT_STATE:   " + str(self.STATE.ID) + " " + self.STATE.STR )
-            self.CMD = self.process_STATE(self.STATE) # next COMMAND is not used here .. is stored by memeber var
-            print( "process_STATE" + "   - " + "next_COMMAND: " + str(self.CMD.ID) + " " + self.CMD.STR )
-            print( " " )
-            time.sleep(1)
+#        while True:
+        self.CMD.ID = self.readCOMMAND( )
+
+        self.STATE = self.process_COMMAND(self.CMD)
+        # print( "process_COMMAND" + " - " + "NEXT_STATE:   " + str(self.STATE.ID) + " " + self.STATE.STR )
+        self.CMD = self.process_STATE(self.STATE) # next COMMAND is not used here .. is stored by memeber var
+        # print( "process_STATE" + "   - " + "next_COMMAND: " + str(self.CMD.ID) + " " + self.CMD.STR )
+        # print( " " )
+        time.sleep(0.01)
 
     def process_COMMAND(self, cmd):
 
@@ -107,7 +109,7 @@ class PSSM:
         next_state = copy.copy(self.STATE) # next state is same state
 
         # if elif else block goes here
-        if cmd.ID == self.CMD_SNA:
+        if cmd.ID == self.CMD_SNA.ID:
             print( self.CMD_SNA.STR )
             next_state = copy.copy(self.STATE_ERROR) # go directly to error state
 
@@ -117,7 +119,7 @@ class PSSM:
                 next_state = copy.copy(self.STATE_IDLE)
             else: # obvious useless
                 next_state = copy.copy(self.STATE)
-            # write_COMMAND( self.CMD_PONG.STR )
+            writeCOMMAND( self.CMD_PONG.STR )
 
         elif cmd.ID == self.CMD_PONG.ID:
             print( self.CMD_PONG.STR )
@@ -125,7 +127,7 @@ class PSSM:
                 next_state = copy.copy(self.STATE_IDLE)
             else: # obvious useless
                 next_state = copy.copy(self.STATE)
-            # write_COMMAND( self.CMD_PING.STR )
+            writeCOMMAND( self.CMD_PING.STR )
 
         elif cmd.ID == self.CMD_AKNWLDG.ID:
             print( self.CMD_AKNWLDG.STR )
@@ -135,7 +137,7 @@ class PSSM:
             print( self.CMD_RUN.STR )
             if self.STATE.ID != self.STATE_ERROR.ID: # move out of error state
                 next_state = copy.copy(self.STATE_RUNNING)
-                # write_COMMAND( self.ASSM_CMD_AKNWLDG.STR )
+                writeCOMMAND( self.ASSM_CMD_AKNWLDG.STR )
             else: # obvious useless
                 next_state = copy.copy(self.STATE)
 
@@ -143,7 +145,7 @@ class PSSM:
             print( self.CMD_STOP.STR )
             if self.STATE.ID == self.STATE_RUNNING.ID: # move out of error state
                 next_state = copy.copy(self.STATE_IDLE)
-                # write_COMMAND( self.ASSM_CMD_AKNWLDG.STR )
+                writeCOMMAND( self.ASSM_CMD_AKNWLDG.STR )
             else: # obvious useless
                 next_state = copy.copy(self.STATE)
 
@@ -161,7 +163,7 @@ class PSSM:
 
         elif cmd.ID == self.CMD_STATUS.ID:
             print( self.CMD_STATUS.STR )
-            # write_STATE( self.STATE.STR )
+            writeSTATE( self.STATE.STR )
             next_state = copy.copy(self.STATE) # obvious useless
 
         elif cmd.ID == self.CMD_CONNECT.ID:
@@ -173,7 +175,7 @@ class PSSM:
             next_state = copy.copy(self.STATE) # obvious useless
 
         else:
-            print( self.CMD_NULL.STR )
+            # print( self.CMD_NULL.STR )
             next_state = copy.copy(self.STATE)  # obvious useless
 
         return next_state
@@ -185,21 +187,23 @@ class PSSM:
         next_cmd = copy.copy(self.CMD_NULL) # next command is null
 
         if state.ID == self.STATE_ERROR.ID:
-            print( self.STATE_ERROR.STR )
+            # print( self.STATE_ERROR.STR )
             next_cmd = self.error( self.CMD )
         elif state.ID == self.STATE_IDLE.ID:
-            print( self.STATE_IDLE.STR )
+            # print( self.STATE_IDLE.STR )
             next_cmd = self.idle( self.CMD )
         elif state.ID == self.STATE_RUNNING.ID:
-            print( self.STATE_RUNNING.STR )
+            # print( self.STATE_RUNNING.STR )
             next_cmd = self.running( self.CMD )
         else:
-            print( "DEFAULT STATE" )
+            # print( "DEFAULT STATE" )
+            dmy = ""
             # next_cmd is null ..
         return next_cmd
 
+
     def readCOMMAND(self):
-        cmd = writeCommand(self.CMD_NULL.STR) # we read STRINGS; by an example
+        cmd = self.CMD_NULL.STR # we read STRINGS; by an example
         ndx = 0
         char = ''
         chars = []
@@ -232,18 +236,18 @@ class PSSM:
 
 
     def writeCOMMAND(self, cmd): # send ID _NOT_ STR to arduino
-        final = self.MARKER_HEAD + cmd.ID + self.MARKER_FOOT
+        final = self.MARKER_HEAD + cmd.ID + self.MARKER_FOOT # e.g. <5>
         print( final ) # send ID _NOT_ STR to arduino
-        # Serial.print( final ) # send ID _NOT_ STR to arduino
+        self.ser.Print( final ) # send ID _NOT_ STR to arduino
 
     def writeSTATE(self, state):
-        final = self.MARKER_HEAD + state.STR + self.MARKER_FOOT
+        final = self.MARKER_HEAD + state.STR + "/" + self.MARKER_FOOT # e.g. <IDLE/>
         print( final )
-        # Serial.print( state.ID )
+        self.ser.Print( state.ID )
 
     def writeData(self, data):
         print( data )
-        # Serial.print( data )
+        self.ser.Print( data )
 
     # overload this method by own needs ..
     def error(self, PSSM_CMD):

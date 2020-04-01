@@ -29,12 +29,56 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+import serial, os, pty, threading
+from threading import Timer, Thread, Event
 from coolPSSM import PSSM
 
-# let's do it in arduino style :-)
+# def listener(port):
+#     while 1:
+#         res = b""
+#         while not res.endswith(b"\r\n"):
+#             # keep reading one byte at a time until we have a full line
+#             res += os.read(port, 1)
+#         print("command: %s" % res)
+#
+#         #write back the response
+#         if res == b'QPGS\r\n':
+#             os.write(port, b"correct result\r\n")
+#         else:
+#             os.write(port, b"I dont understand\r\n")
 
-pssm = PSSM( ) # always put some global object
+# create some class for threading PSSM ..
+class MyThread(Thread):
+    def __init__(self, event, coolPSSM):
+        Thread.__init__(self)
+        self.stopped = event
+        self.coolPSSM = coolPSSM
+
+    def run(self):
+        while not self.stopped.wait(0.1):
+            self.coolPSSM.loop( )
+
+# dummy serial connection for now ..
+master, slave = pty.openpty() #open the pseudoterminal
+master_name = os.ttyname(master) #translate the slave fd to a filename
+print(master_name)
+slave_name = os.ttyname(slave) #translate the slave fd to a filename
+print(slave_name)
+
+# let's do it in arduino style but only in a thread .. ;-)
+pssm = PSSM(master_name) # always put some global object
 
 pssm.setup( ) # run setup
 
-pssm.loop( ) # run loop
+# #create a separate thread that listens on the master device for commands
+stopFlag = Event()
+thread = MyThread( stopFlag, pssm ) # put it in a thread to loop it
+thread.start()
+
+while True:
+    input = raw_input('Enter your cool PSSM command:')  # If you use Python 2
+    cmd = '<' + str(input) +  '>'
+    print(cmd)
+    if cmd == "<exit>" or cmd == "<EXIT>":
+        stopFlag.set( )
+    os.write( slave, cmd ) #write the first command
