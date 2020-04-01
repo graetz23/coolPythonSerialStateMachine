@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #
 # coolPSSM - cool python serial state machine
 #
@@ -28,13 +29,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-class PSSM:
+from coolPSSM import PSSM
 
-    version = '20200401'
-
-    # Constructor
-    def __init__(self):
-        self.data = [] # do some array
-
-    def hello(self):
-        return 'Hello World'
+pssm = PSSM( )
+print( pssm.hello( ) ) # done my python class hello world :-)
