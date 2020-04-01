@@ -28,7 +28,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-import time, copy
+import time, copy, serial, os, pty
 
 class PSSM_CMD:
     TYPE = "CMD"
@@ -74,10 +74,12 @@ class PSSM:
     def __init__(self):
         # The current COMMAND and the NEXT COMMAND
         self.CMD = copy.copy(self.CMD_NULL)
-        self.NEXT_CMD = copy.copy(self.CMD) # not necessary; for testing
         # The current STATE and the NEXT STATE
         self.STATE = copy.copy(self.STATE_IDLE)
-        self.NEXT_STATE = copy.copy(self.STATE) # not necessary; for testing
+        # dummy serial connection for now ..
+        master, slave = pty.openpty() #open the pseudoterminal
+        slave_name = os.ttyname(slave) #translate the slave fd to a filename
+        self.ser = serial.Serial( slave_name, 2400, timeout=1 )
 
     def setup(self):
         print( "setup .." )
@@ -196,28 +198,36 @@ class PSSM:
             # next_cmd is null ..
         return next_cmd
 
-    # TODO this C method serial style has to be transformed to python style ..
     def readCOMMAND(self):
-        cmd = writeCommand(self.CMD_PING.STR) # we read STRINGS; by an example
+        cmd = writeCommand(self.CMD_NULL.STR) # we read STRINGS; by an example
         ndx = 0
         char = ''
         chars = []
         isReceiving = False
-        # if Serial.available
-        # while Serial.available > 0
-        # char = Serial.read( )
-        if isReceiving == True:
-            if( cmd != self.MARKER_FOOT ):
-                chars[ ndx ] = char
-                ndx = ndx + 1
-                if ndx >= 32:
-                    ndx = 31 # stop filling the buffer ..
-            else:
-                isReceiving = False
-        elif cmd.startswith( self.MARKER_HEAD ):
-            isReceiving = True
-        # cmd = str(chars)
-        # while end
+        while self.ser.inWaiting( ):
+
+            char = self.ser.read( ) # read single byte
+
+            if isReceiving == True:
+                if cmd != self.MARKER_FOOT :
+                    chars[ ndx ] = char
+                    ndx = ndx + 1
+                    if ndx >= 32:
+                        ndx = 31 # stop filling the buffer ..
+                        isReceiving = False # stop receiving
+                else:
+                    isReceiving = False
+            elif char == self.MARKER_HEAD :
+                isReceiving = True
+
+            def join(s):
+                j = ""
+                for c in s:
+                    j += c
+                return j
+
+            cmd = join( chars )
+
         return cmd
 
 
