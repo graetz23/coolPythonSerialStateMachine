@@ -196,6 +196,31 @@ class PSSM:
             # next_cmd is null ..
         return next_cmd
 
+    # TODO this C method serial style has to be transformed to python style ..
+    def readCOMMAND(self):
+        cmd = writeCommand(self.CMD_PING.STR) # we read STRINGS; by an example
+        ndx = 0
+        char = ''
+        chars = []
+        isReceiving = False
+        # if Serial.available
+        # while Serial.available > 0
+        # char = Serial.read( )
+        if isReceiving == True:
+            if( cmd != self.MARKER_FOOT ):
+                chars[ ndx ] = char
+                ndx = ndx + 1
+                if ndx >= 32:
+                    ndx = 31 # stop filling the buffer ..
+            else:
+                isReceiving = False
+        elif cmd.startswith( self.MARKER_HEAD ):
+            isReceiving = True
+        # cmd = str(chars)
+        # while end
+        return cmd
+
+
     def writeCOMMAND(self, cmd): # send ID _NOT_ STR to arduino
         final = self.MARKER_HEAD + cmd.ID + self.MARKER_FOOT
         print( final ) # send ID _NOT_ STR to arduino
