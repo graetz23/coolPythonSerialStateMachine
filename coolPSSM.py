@@ -100,5 +100,37 @@ class PSSM:
 
     def process_STATE(self, state):
         next_state = copy.copy(self.STATE) # next is this state
+
+        if state == self.STATE_ERROR:
+            print( self.STATE_ERROR.STR )
+            next_cmd = copy.copy(self.CMD_NULL)
+            next_cmd = self.error( self.CMD )
+        elif state == self.STATE_IDLE:
+            print( self.STATE_IDLE.STR )
+            next_cmd = copy.copy(self.CMD_NULL)
+            next_cmd = self.idle( self.CMD )
+        elif state == self.STATE_RUNNING:
+            print( self.STATE_RUNNING.STR )
+            next_cmd = copy.copy(self.CMD_NULL)
+            next_cmd = self.running( self.CMD )
+        else:
+            print( "DEFAULT STATE" )
+            next_cmd = copy.copy(self.CMD_NULL)
+
         print( "process_STATE" + "   - " + "next_STATE:   " + str(next_state.ID) + " " + next_state.STR )
         return next_state
+
+    # overload this method by own needs ..
+    def error(self, PSSM_CMD):
+        next_cmd = copy.copy(self.CMD_NULL)
+        return next_cmd
+
+    # overload this method by own needs ..
+    def idle(self, PSSM_CMD):
+        next_cmd = copy.copy(self.CMD_NULL)
+        return next_cmd
+
+    # overload this method by own needs ..
+    def running(self, PSSM_CMD):
+        next_cmd = copy.copy(self.CMD_NULL)
+        return next_cmd
