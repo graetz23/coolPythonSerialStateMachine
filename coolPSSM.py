@@ -31,11 +31,13 @@
 import time, copy
 
 class PSSM_CMD:
+    TYPE = "CMD"
     def __init__(self, id, str):
         self.ID = id
         self.STR = str
 
 class PSSM_STATE:
+    TYPE = "STATE"
     def __init__(self, id, str):
         self.ID = id
         self.STR = str
@@ -193,6 +195,20 @@ class PSSM:
             print( "DEFAULT STATE" )
             # next_cmd is null ..
         return next_cmd
+
+    def writeCOMMAND(self, cmd): # send ID _NOT_ STR to arduino
+        final = self.MARKER_HEAD + cmd.ID + self.MARKER_FOOT
+        print( final ) # send ID _NOT_ STR to arduino
+        # Serial.print( final ) # send ID _NOT_ STR to arduino
+
+    def writeSTATE(self, state):
+        final = self.MARKER_HEAD + state.STR + self.MARKER_FOOT
+        print( final )
+        # Serial.print( state.ID )
+
+    def writeData(self, data):
+        print( data )
+        # Serial.print( data )
 
     # overload this method by own needs ..
     def error(self, PSSM_CMD):
