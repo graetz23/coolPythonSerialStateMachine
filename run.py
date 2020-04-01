@@ -32,4 +32,5 @@
 from coolPSSM import PSSM
 
 pssm = PSSM( )
-print( pssm.hello( ) ) # done my python class hello world :-)
+print( pssm.STATE_IDLE.ID ) # done my python class hello world :-)
+print( pssm.STATE_IDLE.STR ) # done my python class hello world :-)

@@ -28,46 +28,45 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+
+class PSSM_CMD:
+    ID=0
+    STR=""
+    def __init__(self, id, str):
+        self.ID = id
+        self.STR = str
+
+class PSSM_STATE:
+    ID=0
+    STR=""
+    def __init__(self, id, str):
+        self.ID = id
+        self.STR = str
+
 class PSSM:
 
     #  the cool PSSM COMMANDs as IDs and STRINGs
-    CMD_NULL=0 # NULL or NO COMMAND; is handled as a CMD
-    CMD_NULL_STR="NULL"
-    CMD_SNA=1 # service not available (SNA); go error state
-    CMD_SNA_STR="SNA"
-    CMD_PING=2 # send a PING and try get a PONG response
-    CMD_PING_STR="PING"
-    CMD_PONG=3 # send a PONG for a PING receive
-    CMD_PONG_STR="PONG"
-    CMD_AKNWLDG=4 # ACKNOWLEDGE a received command
-    CMD_AKNWLDG_STR="AKNWLDG"
-    CMD_RUN=5 # signal to WAIT to CLIENT or SERVER
-    CMD_RUN_STR="RUN"
-    CMD_WAIT=6 # signal to WAIT to CLIENT or SERVER
-    CMD_WAIT_STR="WAIT"
-    CMD_EVENT=7 # signal an EVENT to CLIENT or SERVER
-    CMD_EVENT_STR="EVENT"
-    CMD_DONE=8 # send a STOP to CLIENT or SERVER
-    CMD_DONE_STR="DONE"
-    CMD_STOP=9 # send a STOP to CLIENT or SERVER
-    CMD_STOP_STR="STOP"
-    CMD_STATUS=10 # request the STATUS of CLIENT or SERVER
-    CMD_STATUS_STR="STATUS"
-    CMD_CONNECT=21 # CONNECT and ready for COMMANDs
-    CMD_CONNECT_STR="CONNECT"
-    CMD_DISCNCT=22 # DISCONNECT from SERVER
-    CMD_DISCNCT_STR="DISCNCT"
+    CMD = PSSM_CMD(0,"NULL")
+    CMD_NULL            = PSSM_CMD(0,"NULL") # NULL or NO COMMAND; is handled as a CMD
+    CMD_SNA             = PSSM_CMD(1,"SNA") # service not available (SNA); go error state
+    CMD_PING            = PSSM_CMD(2,"PING") # send a PING and try get a PONG response
+    CMD_PONG            = PSSM_CMD(3,"PONG") # send a PONG for a PING receive
+    CMD_AKNWLDG         = PSSM_CMD(4,"AKNWLDG") # ACKNOWLEDGE a received command
+    CMD_RUN             = PSSM_CMD(5,"RUN") # signal to WAIT to CLIENT or SERVER
+    CMD_WAIT            = PSSM_CMD(6,"WAIT") # signal to WAIT to CLIENT or SERVER
+    CMD_EVENT           = PSSM_CMD(7,"EVENT") # signal an EVENT to CLIENT or SERVER
+    CMD_DONE            = PSSM_CMD(8,"DONE") # send a STOP to CLIENT or SERVER
+    CMD_STOP            = PSSM_CMD(9,"STOP") # send a STOP to CLIENT or SERVER
+    CMD_STATUS          = PSSM_CMD(10,"STATUS") # request the STATUS of CLIENT or SERVER
+    CMD_CONNECT         = PSSM_CMD(21,"CONNECT") # CONNECT and ready for COMMANDs
+    CMD_DISCNCT         = PSSM_CMD(22,"DISCNCT") # DISCONNECT from SERVER
     # TODO add your own messages here ..
-    CMD_EXAMPLE=42
-    CMD_EXAMPLE_STR="EXAMPLE"
+    CMD_EXAMPLE         = PSSM_CMD(42, "EXAMPLE")
 
     # The cool PSSM STATEs
-    STATE_ERROR=0
-    STATE_ERROR_STR="ERROR"
-    STATE_IDLE=1
-    STATE_IDLE_STR="IDLE"
-    STATE_RUNNING=2
-    STATE_RUNNING_STR="RUNNING"
+    STATE_ERROR         = PSSM_STATE(0,"ERROR")
+    STATE_IDLE          = PSSM_STATE(1,"IDLE")
+    STATE_RUNNING       = PSSM_STATE(2,"RUNNING")
 
     # Constructor
     def __init__(self):
