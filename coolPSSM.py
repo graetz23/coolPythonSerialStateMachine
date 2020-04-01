@@ -89,36 +89,110 @@ class PSSM:
     def loop(self):
         print( "loop .." )
         while True:
-            next_cmd = self.process_COMMAND(self.CMD)
-            next_state = self.process_STATE(self.STATE)
+            self.STATE = self.process_COMMAND(self.CMD)
+            print( "process_COMMAND" + " - " + "NEXT_STATE:   " + str(self.STATE.ID) + " " + self.STATE.STR )
+            self.CMD = self.process_STATE(self.STATE) # next COMMAND is not used here .. is stored by memeber var
+            print( "process_STATE" + "   - " + "next_COMMAND: " + str(self.CMD.ID) + " " + self.CMD.STR )
+            print( " " )
             time.sleep(1)
 
     def process_COMMAND(self, cmd):
-        next_cmd = copy.copy(self.CMD_NULL) # next is no command
-        print( "process_COMMAND" + " - " + "next_COMMAND: " + str(next_cmd.ID) + " " + next_cmd.STR )
-        return next_cmd
+
+        self.CMD = cmd # obvious useless
+
+        next_state = copy.copy(self.STATE) # next state is same state
+
+        # if elif else block goes here
+        if cmd.ID == self.CMD_SNA:
+            print( self.CMD_SNA.STR )
+            next_state = copy.copy(self.STATE_ERROR) # go directly to error state
+
+        elif cmd.ID == self.CMD_PING.ID:
+            print( self.CMD_PING.STR )
+            if self.STATE.ID == self.STATE_ERROR.ID:  # move out of error state
+                next_state = copy.copy(self.STATE_IDLE)
+            else: # obvious useless
+                next_state = copy.copy(self.STATE)
+            # write_COMMAND( self.CMD_PONG.STR )
+
+        elif cmd.ID == self.CMD_PONG.ID:
+            print( self.CMD_PONG.STR )
+            if self.STATE.ID == self.STATE_ERROR.ID: # move out of error state
+                next_state = copy.copy(self.STATE_IDLE)
+            else: # obvious useless
+                next_state = copy.copy(self.STATE)
+            # write_COMMAND( self.CMD_PING.STR )
+
+        elif cmd.ID == self.CMD_AKNWLDG.ID:
+            print( self.CMD_AKNWLDG.STR )
+            next_state = copy.copy(self.STATE) # obvious useless
+
+        elif cmd.ID == self.CMD_RUN.ID:
+            print( self.CMD_RUN.STR )
+            if self.STATE.ID != self.STATE_ERROR.ID: # move out of error state
+                next_state = copy.copy(self.STATE_RUNNING)
+                # write_COMMAND( self.ASSM_CMD_AKNWLDG.STR )
+            else: # obvious useless
+                next_state = copy.copy(self.STATE)
+
+        elif cmd.ID == self.CMD_STOP.ID:
+            print( self.CMD_STOP.STR )
+            if self.STATE.ID == self.STATE_RUNNING.ID: # move out of error state
+                next_state = copy.copy(self.STATE_IDLE)
+                # write_COMMAND( self.ASSM_CMD_AKNWLDG.STR )
+            else: # obvious useless
+                next_state = copy.copy(self.STATE)
+
+        elif cmd.ID == self.CMD_WAIT.ID:
+            print( self.CMD_WAIT.STR )
+            next_state = copy.copy(self.STATE) # obvious useless
+
+        elif cmd.ID == self.CMD_EVENT.ID:
+            print( self.CMD_EVENT.STR )
+            next_state = copy.copy(self.STATE) # obvious useless
+
+        elif cmd.ID == self.CMD_DONE.ID:
+            print( self.CMD_DONE.STR )
+            next_state = copy.copy(self.STATE) # obvious useless
+
+        elif cmd.ID == self.CMD_STATUS.ID:
+            print( self.CMD_STATUS.STR )
+            # write_STATE( self.STATE.STR )
+            next_state = copy.copy(self.STATE) # obvious useless
+
+        elif cmd.ID == self.CMD_CONNECT.ID:
+            print( self.CMD_CONNECT.STR )
+            next_state = copy.copy(self.STATE) # obvious useless
+
+        elif cmd.ID == self.CMD_DISCNCT.ID:
+            print( self.CMD_DISCNCT.STR )
+            next_state = copy.copy(self.STATE) # obvious useless
+
+        else:
+            print( self.CMD_NULL.STR )
+            next_state = copy.copy(self.STATE)  # obvious useless
+
+        return next_state
 
     def process_STATE(self, state):
-        next_state = copy.copy(self.STATE) # next is this state
 
-        if state == self.STATE_ERROR:
+        self.STATE = state # obvious useless
+
+        next_cmd = copy.copy(self.CMD_NULL) # next command is null
+
+        if state.ID == self.STATE_ERROR.ID:
             print( self.STATE_ERROR.STR )
-            next_cmd = copy.copy(self.CMD_NULL)
             next_cmd = self.error( self.CMD )
-        elif state == self.STATE_IDLE:
+        elif state.ID == self.STATE_IDLE.ID:
             print( self.STATE_IDLE.STR )
-            next_cmd = copy.copy(self.CMD_NULL)
             next_cmd = self.idle( self.CMD )
-        elif state == self.STATE_RUNNING:
+        elif state.ID == self.STATE_RUNNING.ID:
             print( self.STATE_RUNNING.STR )
-            next_cmd = copy.copy(self.CMD_NULL)
             next_cmd = self.running( self.CMD )
         else:
             print( "DEFAULT STATE" )
-            next_cmd = copy.copy(self.CMD_NULL)
-
-        print( "process_STATE" + "   - " + "next_STATE:   " + str(next_state.ID) + " " + next_state.STR )
-        return next_state
+            # next_cmd is null ..
+        return next_cmd
 
     # overload this method by own needs ..
     def error(self, PSSM_CMD):
