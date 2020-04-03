@@ -49,26 +49,39 @@ class PSSM:
     CMD_SNA     = PSSM_CMD( 1," SNA" ) # service not available (SNA); go error state
     CMD_PING    = PSSM_CMD( 2," PING" ) # send a PING and try get a PONG response
     CMD_PONG    = PSSM_CMD( 3," PONG" ) # send a PONG for a PING receive
-    CMD_AKNWLDG = PSSM_CMD( 4," AKNWLDG" ) # ACKNOWLEDGE a received command
+    CMD_AKNW    = PSSM_CMD( 4," AKNW" ) # ACKNOWLEDGE a received command
     CMD_RUN     = PSSM_CMD( 5," RUN" ) # signal to WAIT to CLIENT or SERVER
     CMD_WAIT    = PSSM_CMD( 6," WAIT" ) # signal to WAIT to CLIENT or SERVER
     CMD_EVENT   = PSSM_CMD( 7," EVENT" ) # signal an EVENT to CLIENT or SERVER
     CMD_DONE    = PSSM_CMD( 8," DONE" ) # send a STOP to CLIENT or SERVER
     CMD_STOP    = PSSM_CMD( 9," STOP" ) # send a STOP to CLIENT or SERVER
     CMD_STATUS  = PSSM_CMD( 10, "STATUS" ) # request the STATUS of CLIENT or SERVER
-    CMD_CONNECT = PSSM_CMD( 21, "CONNECT" ) # CONNECT and ready for COMMANDs
-    CMD_DISCNCT = PSSM_CMD( 22, "DISCNCT" ) # DISCONNECT from SERVER
+    CMD_RNMD1   = PSSM_CMD( 11, "RNMD1" ) # let arduino do something while in run MODE 1
+    CMD_RNMD2   = PSSM_CMD( 12, "RNMD2" ) # let arduino do something while in run MODE 2
+    CMD_RNMD3   = PSSM_CMD( 13, "RNMD3" ) # let arduino do something while in run MODE 3
+    CMD_RNMD4   = PSSM_CMD( 14, "RNMD4" ) # let arduino do something while in run MODE 4
+    CMD_RNMD5   = PSSM_CMD( 15, "RNMD5" ) # let arduino do something while in run MODE 5
+    CMD_RNMD6   = PSSM_CMD( 16, "RNMD6" ) # let arduino do something while in run MODE 6
+    CMD_RNMD7   = PSSM_CMD( 17, "RNMD7" ) # let arduino do something while in run MODE 7
+    CMD_CONNECT = PSSM_CMD( 18, "CNCT" ) # CONNECT and ready for COMMANDs
+    CMD_DISCNCT = PSSM_CMD( 19, "DCNT" ) # DISCONNECT from SERVER
     # TODO add your own messages here ..
     CMD_EXAMPLE = PSSM_CMD( 42, "EXAMPLE" )
 
     # The cool PSSM STATEs
     STATE_ERROR     = PSSM_STATE( 0, "ERROR " )
     STATE_IDLE      = PSSM_STATE( 1, "IDLE" )
-    STATE_RUNNING   = PSSM_STATE( 2, "RUNNING" )
+    # run MODEs; MODE1, MODE2, .., MODE7
+    STATE_MODE1     = PSSM_STATE( 11, "MODE1" ) # arduino is processing MODE 1
+    STATE_MODE2     = PSSM_STATE( 12, "MODE2" ) # arduino is processing MODE 2
+    STATE_MODE3     = PSSM_STATE( 13, "MODE3" ) # arduino is processing MODE 3
+    STATE_MODE4     = PSSM_STATE( 14, "MODE4" ) # arduino is processing MODE 4
+    STATE_MODE5     = PSSM_STATE( 15, "MODE5" ) # arduino is processing MODE 5
+    STATE_MODE6     = PSSM_STATE( 16, "MODE6" ) # arduino is processing MODE 6
+    STATE_MODE7     = PSSM_STATE( 17, "MODE7" ) # arduino is processing MODE 1
 
     MARKER_HEAD = '<' # starting marker for a command on serial line
     MARKER_FOOT = '>' # ending marker for a command on serial line
-    MARKER_CMD = 'CMD_' # prefix for commands
 
     # Constructor
     def __init__(self, port):
@@ -78,6 +91,82 @@ class PSSM:
         self.STATE = copy.copy(self.STATE_IDLE)
         # open serial ..
         self.ser = serial.Serial( port, 2400, timeout=1 )
+
+    def readCOMMAND(self):
+        cmd = self.CMD_NULL.STR # we read STRINGS; by an example
+        ndx = 0
+        char = ''
+        chars = []
+        isReceiving = False
+        while self.ser.inWaiting( ):
+
+            char = self.ser.read( ) # read single byte
+
+            if isReceiving == True:
+                if cmd != self.MARKER_FOOT :
+                    chars[ ndx ] = char
+                    ndx = ndx + 1
+                    if ndx >= 32:
+                        ndx = 31 # stop filling the buffer ..
+                        isReceiving = False # stop receiving
+                else:
+                    isReceiving = False
+            elif char == self.MARKER_HEAD :
+                isReceiving = True
+
+            def join(s):
+                j = ""
+                for c in s:
+                    j += c
+                return j
+
+            cmd = join( chars )
+
+        return cmd
+
+    def writeCommandAsString(self, cmd): # send ID _NOT_ STR to arduino
+        final = self.MARKER_HEAD + cmd.STR + "/" + self.MARKER_FOOT # e.g. <5>
+        print( final ) # send ID _NOT_ STR to arduino
+        self.ser.Print( final ) # send ID _NOT_ STR to arduino
+
+    def writeCommandAsID(self, cmd): # send ID _NOT_ STR to arduino
+        final = self.MARKER_HEAD + cmd.ID + self.MARKER_FOOT # e.g. <5>
+        print( final ) # send ID _NOT_ STR to arduino
+        self.ser.Print( final ) # send ID _NOT_ STR to arduino
+
+    def writeStateAsStr(self, state):
+        final = self.MARKER_HEAD + state.STR + "/" + self.MARKER_FOOT # e.g. <IDLE/>
+        print( final )
+        self.ser.Print( state.ID )
+
+    def writeStateAsID(self, state):
+        final = self.MARKER_HEAD + state.ID + "/" + self.MARKER_FOOT # e.g. <IDLE/>
+        print( final )
+        self.ser.Print( state.ID )
+
+    def writeDataStartingAsString(self, cmd):
+        final = self.MARKER_HEAD + cmd.STR + self.MARKER_FOOT # e.g. <IDLE/>
+        print( data )
+        self.ser.Print( data )
+
+    def writeDataStartingAsID(self, cmd):
+        final = self.MARKER_HEAD + cmd.ID + self.MARKER_FOOT # e.g. <IDLE/>
+        print( data )
+        self.ser.Print( data )
+
+    def writeData(self, data):
+        print( data )
+        self.ser.Print( data )
+
+    def writeDataStoppingAsString(self, cmd):
+        final = self.MARKER_HEAD + "/" + cmd.STR + self.MARKER_FOOT # e.g. <IDLE/>
+        print( data )
+        self.ser.Print( data )
+
+    def writeDataStoppingAsID(self, cmd):
+        final = self.MARKER_HEAD + "/" + cmd.ID + self.MARKER_FOOT # e.g. <IDLE/>
+        print( data )
+        self.ser.Print( data )
 
     def setup(self):
         # print( "setup .." )
@@ -119,7 +208,7 @@ class PSSM:
                 next_state = copy.copy(self.STATE_IDLE)
             else: # obvious useless
                 next_state = copy.copy(self.STATE)
-            writeCOMMAND( self.CMD_PONG.STR )
+            writeCommandAsString( self.CMD_PONG )
 
         elif cmd.ID == self.CMD_PONG.ID:
             print( self.CMD_PONG.STR )
@@ -127,25 +216,61 @@ class PSSM:
                 next_state = copy.copy(self.STATE_IDLE)
             else: # obvious useless
                 next_state = copy.copy(self.STATE)
-            writeCOMMAND( self.CMD_PING.STR )
+            writeCommandAsString( self.CMD_PING )
 
-        elif cmd.ID == self.CMD_AKNWLDG.ID:
-            print( self.CMD_AKNWLDG.STR )
+        elif cmd.ID == self.CMD_AKNW.ID:
+            print( self.CMD_AKNW.STR )
             next_state = copy.copy(self.STATE) # obvious useless
 
         elif cmd.ID == self.CMD_RUN.ID:
             print( self.CMD_RUN.STR )
-            if self.STATE.ID != self.STATE_ERROR.ID: # move out of error state
-                next_state = copy.copy(self.STATE_RUNNING)
-                writeCOMMAND( self.ASSM_CMD_AKNWLDG.STR )
+            if self.STATE.ID == self.STATE_MODE1.ID: # just ACKNOWLEDGE
+                next_state = copy.copy(self.STATE)
+                writeCommandAsString( self.ASSM_CMD_AKNW )
+            elif self.STATE.ID == self.STATE_MODE2.ID: # just ACKNOWLEDGE
+                next_state = copy.copy(self.STATE)
+                writeCommandAsString( self.ASSM_CMD_AKNW )
+            elif self.STATE.ID == self.STATE_MODE3.ID: # just ACKNOWLEDGE
+                next_state = copy.copy(self.STATE)
+                writeCommandAsString( self.ASSM_CMD_AKNW )
+            elif self.STATE.ID == self.STATE_MODE4.ID: # just ACKNOWLEDGE
+                next_state = copy.copy(self.STATE)
+                writeCommandAsString( self.ASSM_CMD_AKNW )
+            elif self.STATE.ID == self.STATE_MODE5.ID: # just ACKNOWLEDGE
+                next_state = copy.copy(self.STATE)
+                writeCommandAsString( self.ASSM_CMD_AKNW )
+            elif self.STATE.ID == self.STATE_MODE6.ID: # just ACKNOWLEDGE
+                next_state = copy.copy(self.STATE)
+                writeCommandAsString( self.ASSM_CMD_AKNW )
+            elif self.STATE.ID == self.STATE_MODE7.ID: # just ACKNOWLEDGE
+                next_state = copy.copy(self.STATE)
+                writeCommandAsString( self.ASSM_CMD_AKNW )
             else: # obvious useless
                 next_state = copy.copy(self.STATE)
 
         elif cmd.ID == self.CMD_STOP.ID:
             print( self.CMD_STOP.STR )
-            if self.STATE.ID == self.STATE_RUNNING.ID: # move out of error state
+            if self.STATE.ID == self.STATE_MODE1.ID: # move to IDLE
                 next_state = copy.copy(self.STATE_IDLE)
-                writeCOMMAND( self.ASSM_CMD_AKNWLDG.STR )
+                writeCommandAsString( self.ASSM_CMD_AKNW )
+            elif self.STATE.ID == self.STATE_MODE2.ID: # move to IDLE
+                next_state = copy.copy(self.STATE_IDLE)
+                writeCommandAsString( self.ASSM_CMD_AKNW )
+            elif self.STATE.ID == self.STATE_MODE3.ID: # move to IDLE
+                next_state = copy.copy(self.STATE_IDLE)
+                writeCommandAsString( self.ASSM_CMD_AKNW )
+            elif self.STATE.ID == self.STATE_MODE4.ID: # move to IDLE
+                next_state = copy.copy(self.STATE_IDLE)
+                writeCommandAsString( self.ASSM_CMD_AKNW )
+            elif self.STATE.ID == self.STATE_MODE5.ID: # move to IDLE
+                next_state = copy.copy(self.STATE_IDLE)
+                writeCommandAsString( self.ASSM_CMD_AKNW )
+            elif self.STATE.ID == self.STATE_MODE6.ID: # move to IDLE
+                next_state = copy.copy(self.STATE_IDLE)
+                writeCommandAsString( self.ASSM_CMD_AKNW )
+            elif self.STATE.ID == self.STATE_MODE7.ID: # move to IDLE
+                next_state = copy.copy(self.STATE_IDLE)
+                writeCommandAsString( self.ASSM_CMD_AKNW )
             else: # obvious useless
                 next_state = copy.copy(self.STATE)
 
@@ -163,8 +288,8 @@ class PSSM:
 
         elif cmd.ID == self.CMD_STATUS.ID:
             print( self.CMD_STATUS.STR )
-            writeSTATE( self.STATE.STR )
             next_state = copy.copy(self.STATE) # obvious useless
+            writeStateAsStr( self.STATE )
 
         elif cmd.ID == self.CMD_CONNECT.ID:
             print( self.CMD_CONNECT.STR )
@@ -173,6 +298,64 @@ class PSSM:
         elif cmd.ID == self.CMD_DISCNCT.ID:
             print( self.CMD_DISCNCT.STR )
             next_state = copy.copy(self.STATE) # obvious useless
+
+        # RUN MODEs ..
+
+        elif cmd.ID == self.CMD_RNMD1.ID:
+            print( self.ASSM_CMD_RNMD1.STR )
+            if self.STATE.ID != self.STATE_ERROR.ID:
+                print( self.STATE_MODE1.STR )
+                next_state = copy.copy( self.STATE_MODE1 )
+            else:
+                next_state = copy.copy(self.STATE) # obvious useless
+
+        elif cmd.ID == self.CMD_RNMD2.ID:
+            print( self.ASSM_CMD_RNMD2.STR )
+            if self.STATE.ID != self.STATE_ERROR.ID:
+                print( self.STATE_MODE2.STR )
+                next_state = copy.copy( self.STATE_MODE2 )
+            else:
+                next_state = copy.copy(self.STATE) # obvious useless
+
+        elif cmd.ID == self.CMD_RNMD3.ID:
+            print( self.ASSM_CMD_RNMD3.STR )
+            if self.STATE.ID != self.STATE_ERROR.ID:
+                print( self.STATE_MODE3.STR )
+                next_state = copy.copy( self.STATE_MODE3 )
+            else:
+                next_state = copy.copy(self.STATE) # obvious useless
+
+        elif cmd.ID == self.CMD_RNMD4.ID:
+            print( self.ASSM_CMD_RNMD4.STR )
+            if self.STATE.ID != self.STATE_ERROR.ID:
+                print( self.STATE_MODE4.STR )
+                next_state = copy.copy( self.STATE_MODE4 )
+            else:
+                next_state = copy.copy(self.STATE) # obvious useless
+
+        elif cmd.ID == self.CMD_RNMD5.ID:
+            print( self.ASSM_CMD_RNMD5.STR )
+            if self.STATE.ID != self.STATE_ERROR.ID:
+                print( self.STATE_MODE5.STR )
+                next_state = copy.copy( self.STATE_MODE5 )
+            else:
+                next_state = copy.copy(self.STATE) # obvious useless
+
+        elif cmd.ID == self.CMD_RNMD6.ID:
+            print( self.ASSM_CMD_RNMD6.STR )
+            if self.STATE.ID != self.STATE_ERROR.ID:
+                print( self.STATE_MODE6.STR )
+                next_state = copy.copy( self.STATE_MODE6 )
+            else:
+                next_state = copy.copy(self.STATE) # obvious useless
+
+        elif cmd.ID == self.CMD_RNMD7.ID:
+            print( self.ASSM_CMD_RNMD7.STR )
+            if self.STATE.ID != self.STATE_ERROR.ID:
+                print( self.STATE_MODE7.STR )
+                next_state = copy.copy( self.STATE_MODE7 )
+            else:
+                next_state = copy.copy(self.STATE) # obvious useless
 
         else:
             # print( self.CMD_NULL.STR )
@@ -189,65 +372,38 @@ class PSSM:
         if state.ID == self.STATE_ERROR.ID:
             # print( self.STATE_ERROR.STR )
             next_cmd = self.error( self.CMD )
+
         elif state.ID == self.STATE_IDLE.ID:
             # print( self.STATE_IDLE.STR )
             next_cmd = self.idle( self.CMD )
-        elif state.ID == self.STATE_RUNNING.ID:
-            # print( self.STATE_RUNNING.STR )
-            next_cmd = self.running( self.CMD )
+
+        elif state.ID == self.STATE_MODE1.ID:
+            # print( self.STATE_MODE1.STR )
+            next_cmd = self.runMODE1( self.CMD )
+        elif state.ID == self.STATE_MODE2.ID:
+            # print( self.STATE_MODE2.STR )
+            next_cmd = self.runMODE2( self.CMD )
+        elif state.ID == self.STATE_MODE3.ID:
+            # print( self.STATE_MODE3.STR )
+            next_cmd = self.runMODE3( self.CMD )
+        elif state.ID == self.STATE_MODE4.ID:
+            # print( self.STATE_MODE4.STR )
+            next_cmd = self.runMODE4( self.CMD )
+        elif state.ID == self.STATE_MODE5.ID:
+            # print( self.STATE_MODE5.STR )
+            next_cmd = self.runMODE5( self.CMD )
+        elif state.ID == self.STATE_MODE6.ID:
+            # print( self.STATE_MODE6.STR )
+            next_cmd = self.runMODE6( self.CMD )
+        elif state.ID == self.STATE_MODE7.ID:
+            # print( self.STATE_MODE7.STR )
+            next_cmd = self.runMODE7( self.CMD )
+
         else:
             # print( "DEFAULT STATE" )
             dmy = ""
             # next_cmd is null ..
         return next_cmd
-
-
-    def readCOMMAND(self):
-        cmd = self.CMD_NULL.STR # we read STRINGS; by an example
-        ndx = 0
-        char = ''
-        chars = []
-        isReceiving = False
-        while self.ser.inWaiting( ):
-
-            char = self.ser.read( ) # read single byte
-
-            if isReceiving == True:
-                if cmd != self.MARKER_FOOT :
-                    chars[ ndx ] = char
-                    ndx = ndx + 1
-                    if ndx >= 32:
-                        ndx = 31 # stop filling the buffer ..
-                        isReceiving = False # stop receiving
-                else:
-                    isReceiving = False
-            elif char == self.MARKER_HEAD :
-                isReceiving = True
-
-            def join(s):
-                j = ""
-                for c in s:
-                    j += c
-                return j
-
-            cmd = join( chars )
-
-        return cmd
-
-
-    def writeCOMMAND(self, cmd): # send ID _NOT_ STR to arduino
-        final = self.MARKER_HEAD + cmd.ID + self.MARKER_FOOT # e.g. <5>
-        print( final ) # send ID _NOT_ STR to arduino
-        self.ser.Print( final ) # send ID _NOT_ STR to arduino
-
-    def writeSTATE(self, state):
-        final = self.MARKER_HEAD + state.STR + "/" + self.MARKER_FOOT # e.g. <IDLE/>
-        print( final )
-        self.ser.Print( state.ID )
-
-    def writeData(self, data):
-        print( data )
-        self.ser.Print( data )
 
     # overload this method by own needs ..
     def error(self, PSSM_CMD):
@@ -260,6 +416,36 @@ class PSSM:
         return next_cmd
 
     # overload this method by own needs ..
-    def running(self, PSSM_CMD):
+    def runMODE1(self, PSSM_CMD):
+        next_cmd = copy.copy(self.CMD_NULL)
+        return next_cmd
+
+    # overload this method by own needs ..
+    def runMODE2(self, PSSM_CMD):
+        next_cmd = copy.copy(self.CMD_NULL)
+        return next_cmd
+
+    # overload this method by own needs ..
+    def runMODE3(self, PSSM_CMD):
+        next_cmd = copy.copy(self.CMD_NULL)
+        return next_cmd
+
+    # overload this method by own needs ..
+    def runMODE4(self, PSSM_CMD):
+        next_cmd = copy.copy(self.CMD_NULL)
+        return next_cmd
+
+    # overload this method by own needs ..
+    def runMODE5(self, PSSM_CMD):
+        next_cmd = copy.copy(self.CMD_NULL)
+        return next_cmd
+
+    # overload this method by own needs ..
+    def runMODE6(self, PSSM_CMD):
+        next_cmd = copy.copy(self.CMD_NULL)
+        return next_cmd
+
+    # overload this method by own needs ..
+    def runMODE7(self, PSSM_CMD):
         next_cmd = copy.copy(self.CMD_NULL)
         return next_cmd

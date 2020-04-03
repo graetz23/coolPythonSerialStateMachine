@@ -59,26 +59,29 @@ class MyThread(Thread):
             self.coolPSSM.loop( )
 
 # dummy serial connection for now ..
-master, slave = pty.openpty() #open the pseudoterminal
-master_name = os.ttyname(master) #translate the slave fd to a filename
-print(master_name)
-slave_name = os.ttyname(slave) #translate the slave fd to a filename
-print(slave_name)
+# master, slave = pty.openpty() #open the pseudoterminal
+# master_name = os.ttyname(master) #translate the slave fd to a filename
+# print(master_name)
+# slave_name = os.ttyname(slave) #translate the slave fd to a filename
+# print(slave_name)
 
 # let's do it in arduino style but only in a thread .. ;-)
 pssm = PSSM(master_name) # always put some global object
 
 pssm.setup( ) # run setup
 
-# #create a separate thread that listens on the master device for commands
-stopFlag = Event()
-thread = MyThread( stopFlag, pssm ) # put it in a thread to loop it
-thread.start()
-
 while True:
-    input = raw_input('Enter your cool PSSM command:')  # If you use Python 2
-    cmd = '<' + str(input) +  '>'
-    print(cmd)
-    if cmd == "<exit>" or cmd == "<EXIT>":
-        stopFlag.set( )
-    os.write( slave, cmd ) #write the first command
+    pssm.loop( ); # looping louie
+
+# #create a separate thread that listens on the master device for commands
+# stopFlag = Event()
+# thread = MyThread( stopFlag, pssm ) # put it in a thread to loop it
+# thread.start()
+
+# while True:
+#     input = raw_input('Enter your cool PSSM command:')  # If you use Python 2
+#     cmd = '<' + str(input) +  '>'
+#     print(cmd)
+#     if cmd == "<exit>" or cmd == "<EXIT>":
+#         stopFlag.set( )
+#     os.write( slave, cmd ) #write the first command
