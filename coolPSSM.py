@@ -59,7 +59,14 @@ class PSSM_Serial_Thread (threading.Thread):
                 self.READ = self.PSSM.SERIAL.reading( ) # read serial data only
             except:
                 pass
-            time.sleep(0.01)
+            time.sleep(0.01) # obvious useless ??
+
+    # Decoupling from speedy method; while REQUEST / RESPONSE things, MEMENTO
+    # carries ALWAYS the received RESPONSE for the REQUEST, if the CLIENT is
+    # NOT too FAST with reading put the MEMENTO; try to SLEEP a little bit on
+    # CLIENT side.
+    def getMemento(self):
+        return self.MEMENTO
 
 # Super Class for SERIAL Messages in PSSM
 class PSSM_Message:
@@ -258,10 +265,14 @@ class PSSM_XML:
 # IDs and / or STRINGs. However, the reading methods should be always threaded.
 class PSSM_Serial:
 
+    MEMENTO = None
+
     SER = None # serial console set to NULL
 
     # Constructor
     def __init__(self, port, baud):
+
+        MEMENTO = None # obvious useless
 
         self.SER = serial.Serial( port, baud, timeout=1 )
         time.sleep(0.1) # give some MOMENT in time to ARDUINO
@@ -285,13 +296,15 @@ class PSSM_Serial:
         return baud
 
     def reading(self):
-        message = "" # we read STRINGS; by an example
+        message = None # we read STRINGS; by an example
         chars = b"" # read BYTES first
         if self.isOpen(): # obvious useless ??
             while self.SER.inWaiting( ):
                 chars += self.SER.read_until( '>' ) # read single byte
-        message = str( chars ) # transform BYTES to STRING
-        print( message ) # DEBUG print out; delete later
+        if len( chars ) > 2:
+            message = str( chars ) # transform BYTES to STRING
+            self.MEMENTO = message # obvious useless
+            # print( message ) # DEBUG print out; delete later
         return message
 
     # send from PYTHON to ARDUINO
@@ -326,6 +339,12 @@ class PSSM_Serial:
                     self.SER.write( pssm_Msg.genDATA( ) ) # send ID _NOT_ STR to arduino
                     isWritten = True
         return isWritten
+
+    # return the LAST RECEIVED Answer of ARDUINO; works well while we are
+    # in CHALLANGING / RESPONDING COMMUNICATION and having SLOW MOVING PHYSICS
+    # on ARDUINO SIDE
+    def getMEMENTO(self):
+        return self.MEMENTO
 
 class PSSM_Client():
 
@@ -362,6 +381,9 @@ class PSSM_Client():
     def writeDATA(self, pssm_Msg):
         return self.SERIAL.writeDATA( pssm_Msg )
 
+    # get the ANSWER (MEMENTO) that ARDUINO has SENT BACK TO LAST REQUEST
+    def getANSWER(self):
+        return self.SERIAL.getMEMENTO( )
 
 class PSSM_Server:
 

@@ -36,14 +36,21 @@ from coolPSSM import PSSM_Client, PSSM_Command
 pssm = PSSM_Client( "/dev/ttyACM0", 9600 ) # always put some global object
 
 while True:
-    pssm.SERIAL.writeID( pssm.CMDS.RMD1 ) # always write IDs to ARDUINO
+    pssm.writeID( pssm.CMDS.RMD1 ) # always write IDs to ARDUINO
+    answer = pssm.getANSWER( )
+    print( answer )
     time.sleep( 1 )
     i = 0
     while i < 3 :
-        pssm.SERIAL.writeID( PSSM_Command( "70", "A0" ) ) # create fly weight like
+        pssm.writeID( PSSM_Command( "70", "A0" ) ) # create fly weight like
         i += 1
-        time.sleep( 1 )
+        time.sleep( 0.5 )
+        answer = pssm.getANSWER( )
+        print( answer )
+        time.sleep( 0.5 )
     # temp = pssm.getThreadedREAD()
     # print("A0: " + str(temp))
-    pssm.SERIAL.writeID( pssm.CMDS.STOP ) # always write IDs to ARDUINO
+    pssm.writeID( pssm.CMDS.STOP ) # always write IDs to ARDUINO
+    answer = pssm.getANSWER( )
+    print( answer )
     time.sleep( 1 )
