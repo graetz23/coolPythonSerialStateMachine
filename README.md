@@ -16,5 +16,8 @@ Everything was coded using:
 
 ## ChangeLog
 
-**version 20200401**:
+**version 20200404**
+  - on the path to rewrite arduino method based style to python's object-oritend style ..
+
+**version 20200401**
   - created repository [coolPythonSerialStateMachine](https://github.com/graetz23/coolPythonSerialStateMachine.git) on github.

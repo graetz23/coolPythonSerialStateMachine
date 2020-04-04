@@ -29,7 +29,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-import serial, os, pty, threading
+import serial, time, os, pty, threading
 from threading import Timer, Thread, Event
 from coolPSSM import PSSM
 
@@ -66,17 +66,26 @@ class MyThread(Thread):
 # print(slave_name)
 
 # let's do it in arduino style but only in a thread .. ;-)
-pssm = PSSM(master_name) # always put some global object
+pssm = PSSM("/dev/ttyACM0", 9600) # always put some global object
 
 pssm.setup( ) # run setup
 
-while True:
-    pssm.loop( ); # looping louie
-
-# #create a separate thread that listens on the master device for commands
 # stopFlag = Event()
 # thread = MyThread( stopFlag, pssm ) # put it in a thread to loop it
 # thread.start()
+# time.sleep(1)
+
+pssm.writeCommandAsID( pssm.CMD_RNMD1 )
+time.sleep(3)
+
+while True:
+    pssm.writeData( "<70>" )
+    time.sleep(0.5)
+    temp = pssm.getThreadedREAD()
+    print("A0: " + str(temp)) 
+
+
+#create a separate thread that listens on the master device for commands
 
 # while True:
 #     input = raw_input('Enter your cool PSSM command:')  # If you use Python 2
