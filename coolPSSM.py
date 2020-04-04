@@ -292,24 +292,83 @@ class PSSM_XML:
 
     STATES = None # obvious useless in python
 
+    HARDWARE = None # obvious useless in python
+
     def __init__(self):
 
-        self.CMDS   = PSSM_Commands() # PROTOTYPEs that can be iterated
+        self.CMDS   = PSSM_Commands( ) # PROTOTYPEs that can be iterated
 
-        self.STATES = PSSM_States() # PROTOTYPEs that can be iterated
+        self.STATES = PSSM_States( ) # PROTOTYPEs that can be iterated
+
+        self.HARDWARE = PSSM_Hardware( ) # PROTOTYPEs that can be iterated
 
     def bake(self, read):
-        # TODO analysie the READ by string explosion BAKE then the matching ..
-        obj = self.CMDS.NULL.COPY( )
-        return obj
+        pssm_Msg = None
+        tag = None
+        data = None
 
-    # TODO rewrite it in python's super best style
-    # e.g. <DATA>23.72</DATA> => 23.72 - works! but being super nasty!
-    def explodeData(self, data):
-        tmp0 = data.split('>')
-        tmp1 = tmp0[ 1 ].split('<')
-        extract  = tmp1[ 0 ]
-        return extract
+        exploded = self.explode( read ) # the first is ALWAYS the TAG
+
+        if exploded != None:
+            if len( exploded ) > 0:
+
+                tag = exploded[ 0 ] # the first is ALWAYS the TAG
+
+                if len( exploded ) == 3: # has DATA
+                    data = exploded[ 1 ] # if length ins three second is DATA
+
+                i = 0
+                isBuilt = False
+                while i < 3 and not isBuilt:
+                    if i == 0:
+                        pssm_Msg = tryBuild( tag, PSSM_Commands( ) )
+                    elif i == 1:
+                        pssm_Msg = tryBuild( tag, PSSM_States( ) )
+                    elif i == 2:
+                        pssm_Msg = tryBuild( tag, PSSM_Hardware( ) )
+
+                    if pssm_Msg != None:
+                        isBuilt = True
+
+                    i += 1
+
+        if pssm_Msg != None: # standardized message found
+            if data != None:
+                pssm_Msg.DATA = data
+        else: # individual message may be found
+            if tag != None:
+                if data != None:
+                    pssm_Msg = PSSM_Data( tag, data )
+            else: # no Tag no pssm_Msg
+                pssm_Msg = self.CMDS.NULL.COPY( ) # does nothing
+
+        return pssm_Msg
+
+    # Explodes an ANSWER to an array of length: 1, (in empty case 2,) or 3.
+    def explode(self, read):            # <TAG>DATA</TAG>
+        tmp1 = read.replace( "<", " " ) #  TAG>DATA /TAG>
+        tmp2 = tmp1.replace( ">", " " ) #  TAG DATA /TAG
+        tmp3 = tmp2.replace( "/", " " ) #  TAG DATA  TAG
+        tmp4 = tmp3.strip( ) # TAG DATA  TAG
+        arr  = tmp3.split( " " ) # [ "TAG", "DATA", "TAG" ]
+        return arr
+
+    def membersOfObject(self, pssm_State_Cmd_HW):
+        vars = filter(lambda a: not a.startswith('__'), dir(pssm_State_Cmd_HW))
+        return vars
+
+    def tryBuild(self, tag, pssm_Msg_List):
+        pssm_Msg = None
+        vars = membersOfObject( pssm_Msg_List )
+        i = 0
+        isFound = False
+        while i < len(vars) and not isFound:
+            prototype = vars[ i ]
+            if prototype.TAG == tag:
+                isFound = True
+                pssm_Msg = prototype.COPY( )
+            i += 1
+        return pssm_Msg
 
 # Utilizes the serial console, especially the reading method for receiving
 # IDs and / or STRINGs. However, the reading methods should be always threaded.
@@ -442,6 +501,11 @@ class PSSM_Client():
         return self.SERIAL.writeDATA( pssm_Msg )
 
     # get the ANSWER (MEMENTO) that ARDUINO has SENT BACK TO LAST REQUEST
+    def getPSSMMessage(self):
+        xml = self.SERIAL.getMEMENTO( )
+        pssm_Msg = PSSM_XML( ).bake( xml ) # bake an object
+        return pssm_Msg
+
     def getANSWER(self):
         return self.SERIAL.getMEMENTO( )
 
