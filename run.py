@@ -42,7 +42,7 @@ while True:
     time.sleep( 1 )
     i = 0
     while i < 3 :
-        pssm.writeID( PSSM_Command( "70", "A0" ) ) # create fly weight like
+        pssm.writeID( PSSM_Command( "40", "A0" ) ) # create fly weight like
         i += 1
         time.sleep( 0.5 )
         answer = pssm.getANSWER( )
