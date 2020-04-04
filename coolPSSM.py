@@ -1,4 +1,4 @@
-PSSM_States#
+#
 # coolPSSM - cool python serial state machine
 #
 # TODO write some description
@@ -71,19 +71,19 @@ class PSSM_Message:
     def __init__(self):
         pass
 
-    def hasID( ):
+    def hasID(self):
         answer = False
         if self.ID != None:
             answer = True
         return answer
 
-    def hasTAG( ):
+    def hasTAG(self):
         answer = False
         if self.TAG != None:
             answer = True
         return answer
 
-    def hasDATA( ):
+    def hasDATA(self):
         answer = False
         if self.DATA != None:
             answer = True
@@ -92,21 +92,21 @@ class PSSM_Message:
     # this is the STYLE to send from PYTHON to ARDUINO
     def genID(self):
         msg = ""
-        if hasID() :
+        if self.hasID() :
             msg = "<" + str(self.ID) + ">"
         return msg
 
     # this is the STYLE to send from ARDUINO & PYTHON to PYTHON
     def genTAG(self):
         msg = ""
-        if hasTAG() :
+        if self.hasTAG() :
             msg = "<" + str(self.TAG) + "/>"
         return msg
 
     # this is the STYLE to send from ARDUINO & PYTHON to PYTHON
     def genDATA(self):
         msg = ""
-        if  hasTAG( ) and hasDATA():
+        if  self.hasTAG( ) and hasDATA():
             msg = "<" + self.TAG + ">" + str(self.DATA) + "</" + self.TAG + ">"
         return msg
 
@@ -291,13 +291,14 @@ class PSSM_Serial:
             while self.SER.inWaiting( ):
                 chars += self.SER.read_until( '>' ) # read single byte
         message = str( chars ) # transform BYTES to STRING
+        print( message ) # DEBUG print out; delete later
         return message
 
     # send from PYTHON to ARDUINO
     def writeID(self, pssm_Msg):
         isWritten = False
         if self.isOpen( ) :
-            if isinstace( pssm_Msg, PSSM_Message ) :
+            if isinstance( pssm_Msg, PSSM_Message ) :
                 if pssm_Msg.hasID( ) :
                     print( pssm_Msg.genID( ) ) # DEBUG print out; delete later
                     self.SER.write( pssm_Msg.genID( ) ) # send ID to ARDUINO
@@ -308,22 +309,22 @@ class PSSM_Serial:
     def writeTAG(self, pssm_Msg): # send ID _NOT_ STR to arduino
         isWritten = False
         if self.isOpen( ) :
-            if isinstace( pssm_Msg, PSSM_Message ) :
+            if isinstance( pssm_Msg, PSSM_Message ) :
                 if pssm_Msg.hasTAG( ) :
-                print( pssm_Msg.genTAG( ) ) # DEBUG print out; delete later
-                self.SER.write( pssm_Msg.genTAG( ) ) # send ID _NOT_ STR to arduino
-                isWritten = True
+                    print( pssm_Msg.genTAG( ) ) # DEBUG print out; delete later
+                    self.SER.write( pssm_Msg.genTAG( ) ) # send ID _NOT_ STR to arduino
+                    isWritten = True
         return isWritten
 
     # send from ARDUINO & PYTHON to PYTHON
     def writeDATA(self, pssm_Msg): # send ID _NOT_ STR to arduino
         isWritten = False
         if self.isOpen( ) :
-            if isinstace( pssm_Msg, PSSM_Message ) :
+            if isinstance( pssm_Msg, PSSM_Message ) :
                 if pssm_Msg.hasDATA( ) :
-                print( pssm_Msg.genDATA( ) ) # DEBUG print out; delete later
-                self.SER.write( pssm_Msg.genDATA( ) ) # send ID _NOT_ STR to arduino
-                isWritten = True
+                    print( pssm_Msg.genDATA( ) ) # DEBUG print out; delete later
+                    self.SER.write( pssm_Msg.genDATA( ) ) # send ID _NOT_ STR to arduino
+                    isWritten = True
         return isWritten
 
 class PSSM_Client():
@@ -387,7 +388,7 @@ class PSSM_Server:
 
         self.CMD = self.CMDS.NULL.COPY( ) # no new COMMAND from this STATE
 
-        self.STATE = self.STATES.IDLE.COPY( ) # start up in IDLE state
+        self.STATE = self.STATES.IDLNG.COPY( ) # start up in IDLNG state
 
         self.threadStopFlag = Event()
         self.THREAD_READING = PSSM_Serial_Thread(self.threadStopFlag, self)
@@ -407,7 +408,7 @@ class PSSM_Server:
             # TODO convert the the STRING COMMAND to match an OBJECT
             print( read )
 
-        self.CMD = self.CMDS.IDLE.COPY( ) # DEBUG print out; delete later
+        self.CMD = self.CMDS.IDLNG.COPY( ) # DEBUG print out; delete later
 
         self.STATE = self.process_Command(self.CMD)
         print( "process_Command" + " - " + "next_State:   " + str(self.STATE.ID) + " " + self.STATE.TAG ) # DEBUG print out; delete later
@@ -432,7 +433,7 @@ class PSSM_Server:
         elif cmd.ID == self.CMDS.PING.ID:
             print( self.CMDS.PING.TAG ) # DEBUG print out; delete later
             if self.STATE.ID == self.STATES.ERROR.ID:  # move out of error state
-                next_state = self.STATES.IDLE.COPY( )  # switch
+                next_state = self.STATES.IDLNG.COPY( )  # switch
             else: # obvious useless
                 next_state = self.STATE.COPY( )
             self.SERIAL.writeTAG( self.CMDS.PONG )
@@ -440,7 +441,7 @@ class PSSM_Server:
         elif cmd.ID == self.CMDS.PONG.ID:
             print( self.CMDS.PONG.TAG ) # DEBUG print out; delete later
             if self.STATE.ID == self.STATES.ERROR.ID: # move out of error state
-                next_state = self.STATES.IDLE.COPY( )  # switch
+                next_state = self.STATES.IDLNG.COPY( )  # switch
             else: # obvious useless
                 next_state = self.STATE.COPY( )
             self.SERIAL.writeTAG( self.CMDS.PING )
@@ -477,26 +478,26 @@ class PSSM_Server:
 
         elif cmd.ID == self.CMDS.STOP.ID:
             print( self.CMDS.STOP.TAG ) # DEBUG print out; delete later
-            if self.STATE.ID == self.STATES.MODE1.ID: # move to IDLE
-                next_state = self.STATES.IDLE.COPY( ) # switch
+            if self.STATE.ID == self.STATES.MODE1.ID: # move to IDLNG
+                next_state = self.STATES.IDLNG.COPY( ) # switch
                 self.SERIAL.writeTAG( self.CMDS.AKNW )
-            elif self.STATE.ID == self.STATES.MODE2.ID: # move to IDLE
-                next_state = self.STATES.IDLE.COPY( ) # switch
+            elif self.STATE.ID == self.STATES.MODE2.ID: # move to IDLNG
+                next_state = self.STATES.IDLNG.COPY( ) # switch
                 self.SERIAL.writeTAG( self.CMDS.AKNW )
-            elif self.STATE.ID == self.STATES.MODE3.ID: # move to IDLE
-                next_state = self.STATES.IDLE.COPY( ) # switch
+            elif self.STATE.ID == self.STATES.MODE3.ID: # move to IDLNG
+                next_state = self.STATES.IDLNG.COPY( ) # switch
                 self.SERIAL.writeTAG( self.CMDS.AKNW )
-            elif self.STATE.ID == self.STATES.MODE4.ID: # move to IDLE
-                next_state = self.STATES.IDLE.COPY( )  # switch
+            elif self.STATE.ID == self.STATES.MODE4.ID: # move to IDLNG
+                next_state = self.STATES.IDLNG.COPY( )  # switch
                 self.SERIAL.writeTAG( self.CMDS.AKNW )
-            elif self.STATE.ID == self.STATES.MODE5.ID: # move to IDLE
-                next_state = self.STATES.IDLE.COPY( ) # switch
+            elif self.STATE.ID == self.STATES.MODE5.ID: # move to IDLNG
+                next_state = self.STATES.IDLNG.COPY( ) # switch
                 self.SERIAL.writeTAG( self.CMDS.AKNW )
-            elif self.STATE.ID == self.STATES.MODE6.ID: # move to IDLE
-                next_state = self.STATES.IDLE.COPY( ) # switch
+            elif self.STATE.ID == self.STATES.MODE6.ID: # move to IDLNG
+                next_state = self.STATES.IDLNG.COPY( ) # switch
                 self.SERIAL.writeTAG( self.CMDS.AKNW )
-            elif self.STATE.ID == self.STATES.MODE7.ID: # move to IDLE
-                next_state = self.STATES.IDLE.COPY( ) # switch
+            elif self.STATE.ID == self.STATES.MODE7.ID: # move to IDLNG
+                next_state = self.STATES.IDLNG.COPY( ) # switch
                 self.SERIAL.writeTAG( self.CMDS.AKNW )
             else: # obvious useless
                 next_state = self.STATE.COPY( )
@@ -600,8 +601,8 @@ class PSSM_Server:
             print( self.STATES.ERROR.TAG ) # DEBUG print out; delete later
             next_cmd = self.error( self.CMD )
 
-        elif state.ID == self.STATES.IDLE.ID:
-            print( self.STATES.IDLE.TAG ) # DEBUG print out; delete later
+        elif state.ID == self.STATES.IDLNG.ID:
+            print( self.STATES.IDLNG.TAG ) # DEBUG print out; delete later
             next_cmd = self.idle( self.CMD )
 
         elif state.ID == self.STATES.MODE1.ID:

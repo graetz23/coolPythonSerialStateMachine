@@ -5,7 +5,7 @@
 # Christian
 # graetz23@gmail.com
 # created 20200401
-# version 20200401
+# version 20200404
 #
 # MIT License
 #
@@ -31,66 +31,19 @@
 #
 import serial, time, os, pty, threading
 from threading import Timer, Thread, Event
-from coolPSSM import PSSM
+from coolPSSM import PSSM_Client, PSSM_Command
 
-# def listener(port):
-#     while 1:
-#         res = b""
-#         while not res.endswith(b"\r\n"):
-#             # keep reading one byte at a time until we have a full line
-#             res += os.read(port, 1)
-#         print("command: %s" % res)
-#
-#         #write back the response
-#         if res == b'QPGS\r\n':
-#             os.write(port, b"correct result\r\n")
-#         else:
-#             os.write(port, b"I dont understand\r\n")
-
-# create some class for threading PSSM ..
-class MyThread(Thread):
-    def __init__(self, event, coolPSSM):
-        Thread.__init__(self)
-        self.stopped = event
-        self.coolPSSM = coolPSSM
-
-    def run(self):
-        while not self.stopped.wait(0.1):
-            self.coolPSSM.loop( )
-
-# dummy serial connection for now ..
-# master, slave = pty.openpty() #open the pseudoterminal
-# master_name = os.ttyname(master) #translate the slave fd to a filename
-# print(master_name)
-# slave_name = os.ttyname(slave) #translate the slave fd to a filename
-# print(slave_name)
-
-# let's do it in arduino style but only in a thread .. ;-)
-pssm = PSSM("/dev/ttyACM0", 9600) # always put some global object
-
-pssm.setup( ) # run setup
-
-# stopFlag = Event()
-# thread = MyThread( stopFlag, pssm ) # put it in a thread to loop it
-# thread.start()
-# time.sleep(1)
-
-pssm.writeCommandAsID( pssm.CMD_RNMD1 )
-time.sleep(3)
+pssm = PSSM_Client( "/dev/ttyACM0", 9600 ) # always put some global object
 
 while True:
-    pssm.writeData( "<70>" )
-    time.sleep(0.5)
-    temp = pssm.getThreadedREAD()
-    print("A0: " + str(temp)) 
-
-
-#create a separate thread that listens on the master device for commands
-
-# while True:
-#     input = raw_input('Enter your cool PSSM command:')  # If you use Python 2
-#     cmd = '<' + str(input) +  '>'
-#     print(cmd)
-#     if cmd == "<exit>" or cmd == "<EXIT>":
-#         stopFlag.set( )
-#     os.write( slave, cmd ) #write the first command
+    pssm.SERIAL.writeID( pssm.CMDS.RMD1 ) # always write IDs to ARDUINO
+    time.sleep( 1 )
+    i = 0
+    while i < 3 :
+        pssm.SERIAL.writeID( PSSM_Command( "70", "A0" ) ) # create fly weight like
+        i += 1
+        time.sleep( 1 )
+    # temp = pssm.getThreadedREAD()
+    # print("A0: " + str(temp))
+    pssm.SERIAL.writeID( pssm.CMDS.STOP ) # always write IDs to ARDUINO
+    time.sleep( 1 )
