@@ -224,7 +224,7 @@ class PSSM_States:
     def __init__(self):
 
         #  the cool PSSM & ASSM STATEs as IDs and STRINGs
-        self.ERROR = PSSM_State( 0, "ERROR " ) # arduino is in ERROR state
+        self.ERROR = PSSM_State( 0, "ERROR" ) # arduino is in ERROR state
         self.IDLNG = PSSM_State( 1, "IDLNG" ) # arduino is IDILING around
         # run MODEs; MODE1, MODE2, .., MODE7
         self.MODE1 = PSSM_State( 11, "MODE1" ) # arduino is processing MODE 1
@@ -234,6 +234,56 @@ class PSSM_States:
         self.MODE5 = PSSM_State( 15, "MODE5" ) # arduino is processing MODE 5
         self.MODE6 = PSSM_State( 16, "MODE6" ) # arduino is processing MODE 6
         self.MODE7 = PSSM_State( 17, "MODE7" ) # arduino is processing MODE 7
+
+# representing an itertable set of all HARDWARE COMMANDs that ARDUINO / PYTHON
+# can use for intercommunication. ARDUINO receives IDs, while PYTHON receives
+# STRINGS. The IDs are SYNC to the ITERATOR stuff of python; keep this!
+class PSSM_Hardware:
+
+    ANLG0  = None # for iterating members; do NOT CHANGE the order
+    ANLG1  = None # for iterating members; do NOT CHANGE the order
+    ANLG2  = None # for iterating members; do NOT CHANGE the order
+    ANLG3  = None # for iterating members; do NOT CHANGE the order
+    ANLG4  = None # for iterating members; do NOT CHANGE the order
+    ANLG5  = None # for iterating members; do NOT CHANGE the order
+    GPIO0  = None # for iterating members; do NOT CHANGE the order
+    GPIO1  = None # for iterating members; do NOT CHANGE the order
+    GPIO2  = None # for iterating members; do NOT CHANGE the order
+    GPIO3  = None # for iterating members; do NOT CHANGE the order
+    GPIO4  = None # for iterating members; do NOT CHANGE the order
+    GPIO5  = None # for iterating members; do NOT CHANGE the order
+    GPIO6  = None # for iterating members; do NOT CHANGE the order
+    GPIO7  = None # for iterating members; do NOT CHANGE the order
+    GPIO8  = None # for iterating members; do NOT CHANGE the order
+    GPIO9  = None # for iterating members; do NOT CHANGE the order
+    GPIO10 = None # for iterating members; do NOT CHANGE the order
+    GPIO11 = None # for iterating members; do NOT CHANGE the order
+    GPIO12 = None # for iterating members; do NOT CHANGE the order
+    GPIO13 = None # for iterating members; do NOT CHANGE the order
+
+    def __init__(self):
+
+        #  the cool PSSM & ASSM HARDWARE COMMANDs as IDs and STRINGs
+        self.ANLG0  = PSSM_Command( 40, "ANLG0" ) # arduino's analog A0
+        self.ANLG1  = PSSM_Command( 41, "ANLG1" ) # arduino's analog A0
+        self.ANLG2  = PSSM_Command( 42, "ANLG2" ) # arduino's analog A0
+        self.ANLG3  = PSSM_Command( 43, "ANLG3" ) # arduino's analog A0
+        self.ANLG4  = PSSM_Command( 44, "ANLG4" ) # arduino's analog A0
+        self.ANLG5  = PSSM_Command( 45, "ANLG5" ) # arduino's analog A0
+        self.GPIO0  = PSSM_Command( 60, "GPIO0" ) # arduino's analog A0
+        self.GPIO1  = PSSM_Command( 61, "GPIO1" ) # arduino's analog A0
+        self.GPIO2  = PSSM_Command( 62, "GPIO2" ) # arduino's analog A0
+        self.GPIO3  = PSSM_Command( 63, "GPIO3" ) # arduino's analog A0
+        self.GPIO4  = PSSM_Command( 64, "GPIO4" ) # arduino's analog A0
+        self.GPIO5  = PSSM_Command( 65, "GPIO5" ) # arduino's analog A0
+        self.GPIO6  = PSSM_Command( 66, "GPIO6" ) # arduino's analog A0
+        self.GPIO7  = PSSM_Command( 67, "GPIO7" ) # arduino's analog A0
+        self.GPIO8  = PSSM_Command( 68, "GPIO8" ) # arduino's analog A0
+        self.GPIO9  = PSSM_Command( 69, "GPIO9" ) # arduino's analog A0
+        self.GPIO10 = PSSM_Command( 70, "GPIO10" ) # arduino's analog A0
+        self.GPIO11 = PSSM_Command( 71, "GPIO11" ) # arduino's analog A0
+        self.GPIO12 = PSSM_Command( 72, "GPIO12" ) # arduino's analog A0
+        self.GPIO13 = PSSM_Command( 73, "GPIO13" ) # arduino's analog A0
 
 # TOOL for exploding read COMMANDs baking PSSM_State & PSSM_Command objects ..
 class PSSM_XML:
@@ -346,11 +396,19 @@ class PSSM_Serial:
     def getMEMENTO(self):
         return self.MEMENTO
 
+# PSSM CLIENT for sending COMMANDs to ARDUINO (& PYTHON). The client opens a
+# thread for reading ARDUINOs answers and stores thme in a MEMENTO way; ALWAYS
+# the LAST RECEIVED RESPONSE. This works fine, while ARDUINO is not fast and
+# we have slow physics. Therefore, do not forget to wait some moment in time,
+# after sending to ARDUINO, before calling the getANSWER method. Have a look
+# at run.py for a small example.
 class PSSM_Client():
 
     CMDS = None # obvious useless in python
 
     STATES = None # obvious useless in python
+
+    HARDWARE = None # obvious useless in python
 
     SERIAL = None # obvious useless in python
 
@@ -363,11 +421,13 @@ class PSSM_Client():
 
         self.STATES = PSSM_States( ) # PROTOTYPEs that can be iterated
 
+        self.HARDWARE = PSSM_Hardware( ) # PROTOTYPEs that can be iterated
+
         self.SERIAL = PSSM_Serial(port, baud) # GETTIN high on SERIAL
 
-        self.threadStopFlag = Event()
-        self.THREAD_READING = PSSM_Serial_Thread(self.threadStopFlag, self)
-        self.THREAD_READING.start()
+        self.threadStopFlag = Event( )
+        self.THREAD_READING = PSSM_Serial_Thread( self.threadStopFlag, self )
+        self.THREAD_READING.start( )
 
     # send from PYTHON to ARDUINO
     def writeID(self, pssm_Msg):
@@ -385,6 +445,9 @@ class PSSM_Client():
     def getANSWER(self):
         return self.SERIAL.getMEMENTO( )
 
+# PSSM SERVER is the MIRROWED CLASS of ARDUINO's C++ implementation. Therefore,
+# you can run also a SERVER by PYTHON on some other SYSTEM, like a raspberry pi-
+# TODO The class is implemented but not debugged yet!
 class PSSM_Server:
 
     CMDS = None # obvious useless in python
@@ -392,6 +455,8 @@ class PSSM_Server:
     STATES = None # obvious useless in python
 
     SERIAL = None # obvious useless in python
+
+    HARDWARE = None # obvious useless in python
 
     THREAD_READING = None # obvious useless in python
 
@@ -406,15 +471,17 @@ class PSSM_Server:
 
         self.STATES = PSSM_States( ) # PROTOTYPEs that can be iterated
 
+        self.HARDWARE = PSSM_Hardware( ) # PROTOTYPEs that can be iterated
+
         self.SERIAL = PSSM_Serial(port, baud) # GETTIN high on SERIAL
 
         self.CMD = self.CMDS.NULL.COPY( ) # no new COMMAND from this STATE
 
         self.STATE = self.STATES.IDLNG.COPY( ) # start up in IDLNG state
 
-        self.threadStopFlag = Event()
-        self.THREAD_READING = PSSM_Serial_Thread(self.threadStopFlag, self)
-        self.THREAD_READING.start()
+        self.threadStopFlag = Event( )
+        self.THREAD_READING = PSSM_Serial_Thread( self.threadStopFlag, self )
+        self.THREAD_READING.start( )
 
     # Let's keep ARDUINO STYLE in python
     def setup(self):
@@ -439,7 +506,7 @@ class PSSM_Server:
         print( "process_State" + "   - " + "next_Command: " + str(self.CMD.ID) + " " + self.CMD.TAG ) # DEBUG print out; delete later
 
         print( " " ) # DEBUG print out; delete later
-        time.sleep(1) # DEBUG print out; delete later
+        time.sleep( 1 ) # DEBUG print out; delete later
 
     def process_Command(self, cmd):
 
