@@ -1,4 +1,4 @@
-#
+PSSM_States#
 # coolPSSM - cool python serial state machine
 #
 # TODO write some description
@@ -61,58 +61,88 @@ class PSSM_Serial_Thread (threading.Thread):
                 pass
             time.sleep(0.01)
 
-# representing a COMMAND by ID (for arduino) and STR (for python)
-class PSSM_COMMAND:
+# Super Class for SERIAL Messages in PSSM
+class PSSM_Message:
 
     ID = None # for iterating members; do NOT CHANGE the order
-    TAG = None # for iterating members; do NOT CHANGE the order
-
-    def __init__(self, id, tag):
-        self.ID = id
-        self.TAG = tag
-
-    # COPY CONSTRUCTOR in python ~8>
-    def COPY(self):
-        return copy.copy(self)
-
-    # this is the STYLE to send from PYTHON to ARDUINO
-    def genNUM(self):
-        return "<" + str(self.ID) + ">"
-
-    # this is the STYLE to send from ARDUINO & PYTHON to PYTHON
-    def genTAG(self):
-        return "<" + str(self.TAG) + "/>"
-
-# representing a STATE by ID (for arduino) and STR (for python)
-class PSSM_STATE:
-
-    ID = None # for iterating members; do NOT CHANGE the order
-    TAG = None # for iterating members; do NOT CHANGE the order
-
-    def __init__(self, id, tag):
-        self.ID = id
-        self.TAG = tag
-
-    # COPY CONSTRUCTOR in python ~8>
-    def COPY(self):
-        return copy.copy(self)
-
-    # this is the STYLE to send from PYTHON to ARDUINO
-    def genNUM(self):
-        return "<" + str(self.ID) + ">"
-
-    # this is the STYLE to send from ARDUINO & PYTHON to PYTHON
-    def genTAG(self):
-        return "<" + str(self.TAG) + "/>"
-
-# This is to send data; however here is NO numerical ID while it is not forseen
-# to send data from PYTHON to ARDUINO
-class PSSM_DATA:
-
     TAG = None # for iterating members; do NOT CHANGE the order
     DATA = None # for iterating members; do NOT CHANGE the order
 
+    def __init__(self):
+        pass
+
+    def hasID( ):
+        answer = False
+        if self.ID != None:
+            answer = True
+        return answer
+
+    def hasTAG( ):
+        answer = False
+        if self.TAG != None:
+            answer = True
+        return answer
+
+    def hasDATA( ):
+        answer = False
+        if self.DATA != None:
+            answer = True
+        return answer
+
+    # this is the STYLE to send from PYTHON to ARDUINO
+    def genID(self):
+        msg = ""
+        if hasID() :
+            msg = "<" + str(self.ID) + ">"
+        return msg
+
+    # this is the STYLE to send from ARDUINO & PYTHON to PYTHON
+    def genTAG(self):
+        msg = ""
+        if hasTAG() :
+            msg = "<" + str(self.TAG) + "/>"
+        return msg
+
+    # this is the STYLE to send from ARDUINO & PYTHON to PYTHON
+    def genDATA(self):
+        msg = ""
+        if  hasTAG( ) and hasDATA():
+            msg = "<" + self.TAG + ">" + str(self.DATA) + "</" + self.TAG + ">"
+        return msg
+
+# representing a COMMAND by ID (for arduino) and STR (for python)
+class PSSM_Command(PSSM_Message):
+
+    def __init__(self, id, tag):
+        PSSM_Message( ) # obvious useless
+        self.ID = id
+        self.TAG = tag
+        self.DATA = None #obvious useless
+
+    # COPY CONSTRUCTOR in python ~8>
+    def COPY(self):
+        return copy.copy(self)
+
+# representing a STATE by ID (for arduino) and STR (for python)
+class PSSM_State(PSSM_Message):
+
+    def __init__(self, id, tag):
+        PSSM_Message( ) # obvious useless
+        self.ID = id
+        self.TAG = tag
+        self.DATA = None #obvious useless
+
+    # COPY CONSTRUCTOR in python ~8>
+    def COPY(self):
+        return copy.copy(self)
+
+# This is to send data; however here is NO numerical ID while it is not forseen
+# to send data from PYTHON to ARDUINO
+class PSSM_Data(PSSM_Message):
+
     def __init__(self, tag, data):
+        PSSM_Message( ) # obvious useless
+        self.ID = None #obvious useless
         self.TAG = tag
         self.DATA = data
 
@@ -120,14 +150,10 @@ class PSSM_DATA:
     def COPY(self):
         return copy.copy(self)
 
-    # this is the STYLE to send ARDUINO & PYTHON to PYTHON
-    def genTAG(self):
-        return "<" + self.TAG + ">" + str(self.DATA) + "</" + self.TAG + ">"
-
 # representing an itertable set of all COMMANDs that ARDUINO / PYTHON can use to
 # intercommunication. ARDUINO receives IDs, while PYTHON receives STRINGS. The
 # IDs are SYNC to the ITERATOR stuff of python; keep this!
-class PSSM_COMMANDS:
+class PSSM_Commands:
 
     NULL = None # for iterating members; do NOT CHANGE the order
     SNA  = None # for iterating members; do NOT CHANGE the order
@@ -152,31 +178,31 @@ class PSSM_COMMANDS:
 
     def __init__(self):
         #  the cool PSSM & ASSM COMMANDs as IDs and STRINGs
-        self.NULL = PSSM_COMMAND(  0, "NULL" ) # NULL or NO COMMAND; is handled as a CMD
-        self.SNA  = PSSM_COMMAND(  1," SNA" ) # service not available (SNA); go error state
-        self.PING = PSSM_COMMAND(  2," PING" ) # send a PING and try get a PONG response
-        self.PONG = PSSM_COMMAND(  3," PONG" ) # send a PONG for a PING receive
-        self.AKNW = PSSM_COMMAND(  4," AKNW" ) # ACKNOWLEDGE a received command
-        self.RUN  = PSSM_COMMAND(  5," RUN" ) # signal to WAIT to CLIENT or SERVER
-        self.WAIT = PSSM_COMMAND(  6," WAIT" ) # signal to WAIT to CLIENT or SERVER
-        self.EVNT = PSSM_COMMAND(  7," EVNT" ) # signal an EVENT to CLIENT or SERVER
-        self.DONE = PSSM_COMMAND(  8," DONE" ) # send a STOP to CLIENT or SERVER
-        self.STOP = PSSM_COMMAND(  9," STOP" ) # send a STOP to CLIENT or SERVER
-        self.STAT = PSSM_COMMAND( 10, "STAT" ) # request the STATUS of CLIENT or SERVER
-        self.RMD1 = PSSM_COMMAND( 11, "RMD1" ) # let arduino do something while in run MODE 1
-        self.RMD2 = PSSM_COMMAND( 12, "RMD2" ) # let arduino do something while in run MODE 2
-        self.RMD3 = PSSM_COMMAND( 13, "RMD3" ) # let arduino do something while in run MODE 3
-        self.RMD4 = PSSM_COMMAND( 14, "RMD4" ) # let arduino do something while in run MODE 4
-        self.RMD5 = PSSM_COMMAND( 15, "RMD5" ) # let arduino do something while in run MODE 5
-        self.RMD6 = PSSM_COMMAND( 16, "RMD6" ) # let arduino do something while in run MODE 6
-        self.RMD7 = PSSM_COMMAND( 17, "RMD7" ) # let arduino do something while in run MODE 7
-        self.CNCT = PSSM_COMMAND( 18, "CNCT" ) # obvious useless yet
-        self.DCNT = PSSM_COMMAND( 19, "DCNT" ) # obvious useless yet
+        self.NULL = PSSM_Command(  0, "NULL" ) # NULL or NO COMMAND; is handled as a CMD
+        self.SNA  = PSSM_Command(  1," SNA" ) # service not available (SNA); go error state
+        self.PING = PSSM_Command(  2," PING" ) # send a PING and try get a PONG response
+        self.PONG = PSSM_Command(  3," PONG" ) # send a PONG for a PING receive
+        self.AKNW = PSSM_Command(  4," AKNW" ) # ACKNOWLEDGE a received command
+        self.RUN  = PSSM_Command(  5," RUN" ) # signal to WAIT to CLIENT or SERVER
+        self.WAIT = PSSM_Command(  6," WAIT" ) # signal to WAIT to CLIENT or SERVER
+        self.EVNT = PSSM_Command(  7," EVNT" ) # signal an EVENT to CLIENT or SERVER
+        self.DONE = PSSM_Command(  8," DONE" ) # send a STOP to CLIENT or SERVER
+        self.STOP = PSSM_Command(  9," STOP" ) # send a STOP to CLIENT or SERVER
+        self.STAT = PSSM_Command( 10, "STAT" ) # request the STATUS of CLIENT or SERVER
+        self.RMD1 = PSSM_Command( 11, "RMD1" ) # let arduino do something while in run MODE 1
+        self.RMD2 = PSSM_Command( 12, "RMD2" ) # let arduino do something while in run MODE 2
+        self.RMD3 = PSSM_Command( 13, "RMD3" ) # let arduino do something while in run MODE 3
+        self.RMD4 = PSSM_Command( 14, "RMD4" ) # let arduino do something while in run MODE 4
+        self.RMD5 = PSSM_Command( 15, "RMD5" ) # let arduino do something while in run MODE 5
+        self.RMD6 = PSSM_Command( 16, "RMD6" ) # let arduino do something while in run MODE 6
+        self.RMD7 = PSSM_Command( 17, "RMD7" ) # let arduino do something while in run MODE 7
+        self.CNCT = PSSM_Command( 18, "CNCT" ) # obvious useless yet
+        self.DCNT = PSSM_Command( 19, "DCNT" ) # obvious useless yet
 
 # The STATES that ARDUINO / PYTHON can state while running. PYTHON sends IDs to
 # ARDUINO, while ARDUINO sends STRINGS to PYTHON; however STATEs are only SENT
 # as STRINGS in case of an ID based STAT (status) COMMAND request.
-class PSSM_STATES:
+class PSSM_States:
 
     ERROR = None # for iterating members; do NOT CHANGE the order
     IDLNG = None # for iterating members; do NOT CHANGE the order
@@ -191,16 +217,42 @@ class PSSM_STATES:
     def __init__(self):
 
         #  the cool PSSM & ASSM STATEs as IDs and STRINGs
-        self.ERROR = PSSM_STATE( 0, "ERROR " ) # arduino is in ERROR state
-        self.IDLNG = PSSM_STATE( 1, "IDLNG" ) # arduino is IDILING around
+        self.ERROR = PSSM_State( 0, "ERROR " ) # arduino is in ERROR state
+        self.IDLNG = PSSM_State( 1, "IDLNG" ) # arduino is IDILING around
         # run MODEs; MODE1, MODE2, .., MODE7
-        self.MODE1 = PSSM_STATE( 11, "MODE1" ) # arduino is processing MODE 1
-        self.MODE2 = PSSM_STATE( 12, "MODE2" ) # arduino is processing MODE 2
-        self.MODE3 = PSSM_STATE( 13, "MODE3" ) # arduino is processing MODE 3
-        self.MODE4 = PSSM_STATE( 14, "MODE4" ) # arduino is processing MODE 4
-        self.MODE5 = PSSM_STATE( 15, "MODE5" ) # arduino is processing MODE 5
-        self.MODE6 = PSSM_STATE( 16, "MODE6" ) # arduino is processing MODE 6
-        self.MODE7 = PSSM_STATE( 17, "MODE7" ) # arduino is processing MODE 7
+        self.MODE1 = PSSM_State( 11, "MODE1" ) # arduino is processing MODE 1
+        self.MODE2 = PSSM_State( 12, "MODE2" ) # arduino is processing MODE 2
+        self.MODE3 = PSSM_State( 13, "MODE3" ) # arduino is processing MODE 3
+        self.MODE4 = PSSM_State( 14, "MODE4" ) # arduino is processing MODE 4
+        self.MODE5 = PSSM_State( 15, "MODE5" ) # arduino is processing MODE 5
+        self.MODE6 = PSSM_State( 16, "MODE6" ) # arduino is processing MODE 6
+        self.MODE7 = PSSM_State( 17, "MODE7" ) # arduino is processing MODE 7
+
+# TOOL for exploding read COMMANDs baking PSSM_State & PSSM_Command objects ..
+class PSSM_XML:
+
+    CMDS = None # obvious useless in python
+
+    STATES = None # obvious useless in python
+
+    def __init__(self):
+
+        self.CMDS   = PSSM_Commands() # PROTOTYPEs that can be iterated
+
+        self.STATES = PSSM_States() # PROTOTYPEs that can be iterated
+
+    def bake(self, read):
+        # TODO analysie the READ by string explosion BAKE then the matching ..
+        obj = self.CMDS.NULL.COPY( )
+        return obj
+
+    # TODO rewrite it in python's super best style
+    # e.g. <DATA>23.72</DATA> => 23.72 - works! but being super nasty!
+    def explodeData(self, data):
+        tmp0 = data.split('>')
+        tmp1 = tmp0[ 1 ].split('<')
+        extract  = tmp1[ 0 ]
+        return extract
 
 # Utilizes the serial console, especially the reading method for receiving
 # IDs and / or STRINGs. However, the reading methods should be always threaded.
@@ -241,49 +293,38 @@ class PSSM_Serial:
         message = str( chars ) # transform BYTES to STRING
         return message
 
-    # Send COMMAND as ID from PYTHON to ARDUINO
-    def writeNUM(self, CMD_or_STATE):
+    # send from PYTHON to ARDUINO
+    def writeID(self, pssm_Msg):
         isWritten = False
         if self.isOpen( ) :
-            print( CMD_or_STATE.genNUM( ) ) # DEBUG print out; delete later
-            self.SER.write( CMD_or_STATE.genNUM( ) ) # send ID to ARDUINO
-            isWritten = True
+            if isinstace( pssm_Msg, PSSM_Message ) :
+                if pssm_Msg.hasID( ) :
+                    print( pssm_Msg.genID( ) ) # DEBUG print out; delete later
+                    self.SER.write( pssm_Msg.genID( ) ) # send ID to ARDUINO
+                    isWritten = True
         return isWritten
 
-    # Send COMMAND as TAG to PYHON
-    def writeTAG(self, CMD_or_STATE_or_DATA): # send ID _NOT_ STR to arduino
+    # send from ARDUINO & PYTHON to PYTHON
+    def writeTAG(self, pssm_Msg): # send ID _NOT_ STR to arduino
         isWritten = False
         if self.isOpen( ) :
-            print( CMD_or_STATE_or_DATA.genTAG( ) ) # DEBUG print out; delete later
-            self.SER.write( CMD_or_STATE_or_DATA.genTAG( ) ) # send ID _NOT_ STR to arduino
-            isWritten = True
+            if isinstace( pssm_Msg, PSSM_Message ) :
+                if pssm_Msg.hasTAG( ) :
+                print( pssm_Msg.genTAG( ) ) # DEBUG print out; delete later
+                self.SER.write( pssm_Msg.genTAG( ) ) # send ID _NOT_ STR to arduino
+                isWritten = True
         return isWritten
 
-# TOOL for exploding read COMMANDs baking PSSM_STATE & PSSM_COMMAND objects ..
-class PSSM_XML:
-
-    CMDS = None # obvious useless in python
-
-    STATES = None # obvious useless in python
-
-    def __init__(self):
-
-        self.CMDS   = PSSM_COMMANDS() # PROTOTYPEs that can be iterated
-
-        self.STATES = PSSM_STATES() # PROTOTYPEs that can be iterated
-
-    def bake(self, read):
-        # TODO analysie the READ by string explosion BAKE then the matching ..
-        obj = self.CMDS.NULL.COPY( )
-        return obj
-
-    # TODO rewrite it in python's super best style
-    # e.g. <DATA>23.72</DATA> => 23.72 - works! but being super nasty!
-    def explodeData(self, data):
-        tmp0 = data.split('>')
-        tmp1 = tmp0[ 1 ].split('<')
-        extract  = tmp1[ 0 ]
-        return extract
+    # send from ARDUINO & PYTHON to PYTHON
+    def writeDATA(self, pssm_Msg): # send ID _NOT_ STR to arduino
+        isWritten = False
+        if self.isOpen( ) :
+            if isinstace( pssm_Msg, PSSM_Message ) :
+                if pssm_Msg.hasDATA( ) :
+                print( pssm_Msg.genDATA( ) ) # DEBUG print out; delete later
+                self.SER.write( pssm_Msg.genDATA( ) ) # send ID _NOT_ STR to arduino
+                isWritten = True
+        return isWritten
 
 class PSSM_Client():
 
@@ -298,15 +339,28 @@ class PSSM_Client():
     # Constructor
     def __init__(self, port, baud):
 
-        self.CMDS   = PSSM_COMMANDS() # PROTOTYPEs that can be iterated
+        self.CMDS   = PSSM_Commands( ) # PROTOTYPEs that can be iterated
 
-        self.STATES = PSSM_STATES() # PROTOTYPEs that can be iterated
+        self.STATES = PSSM_States( ) # PROTOTYPEs that can be iterated
 
         self.SERIAL = PSSM_Serial(port, baud) # GETTIN high on SERIAL
 
         self.threadStopFlag = Event()
         self.THREAD_READING = PSSM_Serial_Thread(self.threadStopFlag, self)
         self.THREAD_READING.start()
+
+    # send from PYTHON to ARDUINO
+    def writeID(self, pssm_Msg):
+        return self.SERIAL.writeID( pssm_Msg )
+
+    # send from ARDUINO & PYTHON to PYTHON
+    def writeTAG(self, pssm_Msg):
+        return self.SERIAL.writeTAG( pssm_Msg )
+
+    # send from ARDUINO & PYTHON to PYTHON
+    def writeDATA(self, pssm_Msg):
+        return self.SERIAL.writeDATA( pssm_Msg )
+
 
 class PSSM_Server:
 
@@ -322,21 +376,18 @@ class PSSM_Server:
 
     STATE = None
 
-    MARKER_HEAD = '<' # starting marker for a command on serial line
-    MARKER_FOOT = '>' # ending marker for a command on serial line
-
     # Constructor
     def __init__(self, port, baud):
 
-        self.CMDS   = PSSM_COMMANDS() # PROTOTYPEs that can be iterated
+        self.CMDS   = PSSM_Commands( ) # PROTOTYPEs that can be iterated
 
-        self.STATES = PSSM_STATES() # PROTOTYPEs that can be iterated
+        self.STATES = PSSM_States( ) # PROTOTYPEs that can be iterated
 
         self.SERIAL = PSSM_Serial(port, baud) # GETTIN high on SERIAL
 
-        self.CMD = self.CMDS.NULL.COPY( )
+        self.CMD = self.CMDS.NULL.COPY( ) # no new COMMAND from this STATE
 
-        self.STATE = self.STATES.IDLE.COPY( )
+        self.STATE = self.STATES.IDLE.COPY( ) # start up in IDLE state
 
         self.threadStopFlag = Event()
         self.THREAD_READING = PSSM_Serial_Thread(self.threadStopFlag, self)
@@ -344,287 +395,304 @@ class PSSM_Server:
 
     # Let's keep ARDUINO STYLE in python
     def setup(self):
-        # print( "setup .." )
-        return ""
+        pass
 
     # Let's keep ARDUINO STYLE in python
     def loop(self):
 
         #while True:
-        read = self.THREAD_READING.READ # TODO THIS is not SYNC YET
+        read = self.THREAD_READING.READ # TODO THIS is not SYNC YET - do MEMENTO
 
         if len(read) > 0  :
             # TODO convert the the STRING COMMAND to match an OBJECT
             print( read )
 
-        self.CMD = self.CMDS.IDLE.COPY( )
+        self.CMD = self.CMDS.IDLE.COPY( ) # DEBUG print out; delete later
 
-        self.STATE = self.process_COMMAND(self.CMD)
-        print( "process_COMMAND" + " - " + "NEXT_STATE:   " + str(self.STATE.ID) + " " + self.STATE.TAG ) # DEBUG print out; delete later
+        self.STATE = self.process_Command(self.CMD)
+        print( "process_Command" + " - " + "next_State:   " + str(self.STATE.ID) + " " + self.STATE.TAG ) # DEBUG print out; delete later
 
-        self.CMD = self.process_STATE(self.STATE) # next COMMAND is not used here .. is stored by memeber var
-        print( "process_STATE" + "   - " + "next_COMMAND: " + str(self.CMD.ID) + " " + self.CMD.TAG ) # DEBUG print out; delete later
+        self.CMD = self.process_State(self.STATE) # next COMMAND is not used here .. is stored by memeber var
+        print( "process_State" + "   - " + "next_Command: " + str(self.CMD.ID) + " " + self.CMD.TAG ) # DEBUG print out; delete later
 
         print( " " ) # DEBUG print out; delete later
         time.sleep(1) # DEBUG print out; delete later
 
-    # TODO MATCH the METHODS BELOW TO NEW OBJECT-ORIENTED STYLE ..
-
-    def process_COMMAND(self, cmd):
+    def process_Command(self, cmd):
 
         self.CMD = cmd # obvious useless
 
-        next_state = copy.copy(self.STATE) # next state is same state
+        next_state = self.STATE.COPY( ) # next state is same state
 
         # if elif else block goes here
         if cmd.ID == self.CMDS.SNA.ID:
             print( self.CMDS.SNA.TAG ) # DEBUG print out; delete later
-            next_state = copy.copy(self.STATE_ERROR) # go directly to error state
+            next_state = self.STATES.ERROR.COPY( ) # switch
 
         elif cmd.ID == self.CMDS.PING.ID:
-            print( self.CMDS.PING.TAG )
-            if self.STATE.ID == self.STATE_ERROR.ID:  # move out of error state
-                next_state = copy.copy(self.STATE_IDLE)
+            print( self.CMDS.PING.TAG ) # DEBUG print out; delete later
+            if self.STATE.ID == self.STATES.ERROR.ID:  # move out of error state
+                next_state = self.STATES.IDLE.COPY( )  # switch
             else: # obvious useless
-                next_state = copy.copy(self.STATE)
-            writeCommandAsString( self.CMDS.PONG )
+                next_state = self.STATE.COPY( )
+            self.SERIAL.writeTAG( self.CMDS.PONG )
 
         elif cmd.ID == self.CMDS.PONG.ID:
-            print( self.CMDS.PONG.TAG )
-            if self.STATE.ID == self.STATE_ERROR.ID: # move out of error state
-                next_state = copy.copy(self.STATE_IDLE)
+            print( self.CMDS.PONG.TAG ) # DEBUG print out; delete later
+            if self.STATE.ID == self.STATES.ERROR.ID: # move out of error state
+                next_state = self.STATES.IDLE.COPY( )  # switch
             else: # obvious useless
-                next_state = copy.copy(self.STATE)
-            writeCommandAsString( self.CMDS.PING )
+                next_state = self.STATE.COPY( )
+            self.SERIAL.writeTAG( self.CMDS.PING )
 
         elif cmd.ID == self.CMDS.AKNW.ID:
-            print( self.CMDS.AKNW.TAG )
-            next_state = copy.copy(self.STATE) # obvious useless
+            print( self.CMDS.AKNW.TAG ) # DEBUG print out; delete later
+            next_state = self.STATE.COPY( ) # obvious useless
 
         elif cmd.ID == self.CMDS.RUN.ID:
-            print( self.CMDS.RUN.TAG )
-            if self.STATE.ID == self.STATE_MODE1.ID: # just ACKNOWLEDGE
-                next_state = copy.copy(self.STATE)
-                writeCommandAsString( self.ASSM_CMDS.AKNW )
-            elif self.STATE.ID == self.STATE_MODE2.ID: # just ACKNOWLEDGE
-                next_state = copy.copy(self.STATE)
-                writeCommandAsString( self.ASSM_CMDS.AKNW )
-            elif self.STATE.ID == self.STATE_MODE3.ID: # just ACKNOWLEDGE
-                next_state = copy.copy(self.STATE)
-                writeCommandAsString( self.ASSM_CMDS.AKNW )
-            elif self.STATE.ID == self.STATE_MODE4.ID: # just ACKNOWLEDGE
-                next_state = copy.copy(self.STATE)
-                writeCommandAsString( self.ASSM_CMDS.AKNW )
-            elif self.STATE.ID == self.STATE_MODE5.ID: # just ACKNOWLEDGE
-                next_state = copy.copy(self.STATE)
-                writeCommandAsString( self.ASSM_CMDS.AKNW )
-            elif self.STATE.ID == self.STATE_MODE6.ID: # just ACKNOWLEDGE
-                next_state = copy.copy(self.STATE)
-                writeCommandAsString( self.ASSM_CMDS.AKNW )
-            elif self.STATE.ID == self.STATE_MODE7.ID: # just ACKNOWLEDGE
-                next_state = copy.copy(self.STATE)
-                writeCommandAsString( self.ASSM_CMDS.AKNW )
+            print( self.CMDS.RUN.TAG ) # DEBUG print out; delete later
+            if self.STATE.ID == self.STATES.MODE1.ID: # just ACKNOWLEDGE
+                next_state = self.STATE.COPY( )
+                self.SERIAL.writeTAG( self.CMDS.AKNW )
+            elif self.STATE.ID == self.STATES.MODE2.ID: # just ACKNOWLEDGE
+                next_state = self.STATE.COPY( )
+                self.SERIAL.writeTAG( self.CMDS.AKNW )
+            elif self.STATE.ID == self.STATES.MODE3.ID: # just ACKNOWLEDGE
+                next_state = self.STATE.COPY( )
+                self.SERIAL.writeTAG( self.CMDS.AKNW )
+            elif self.STATE.ID == self.STATES.MODE4.ID: # just ACKNOWLEDGE
+                next_state = self.STATE.COPY( )
+                self.SERIAL.writeTAG( self.CMDS.AKNW )
+            elif self.STATE.ID == self.STATES.MODE5.ID: # just ACKNOWLEDGE
+                next_state = self.STATE.COPY( )
+                self.SERIAL.writeTAG( self.CMDS.AKNW )
+            elif self.STATE.ID == self.STATES.MODE6.ID: # just ACKNOWLEDGE
+                next_state = self.STATE.COPY( )
+                self.SERIAL.writeTAG( self.CMDS.AKNW )
+            elif self.STATE.ID == self.STATES.MODE7.ID: # just ACKNOWLEDGE
+                next_state = self.STATE.COPY( )
+                self.SERIAL.writeTAG( self.CMDS.AKNW )
             else: # obvious useless
-                next_state = copy.copy(self.STATE)
+                next_state = self.STATE.COPY( )
 
         elif cmd.ID == self.CMDS.STOP.ID:
-            print( self.CMDS.STOP.TAG )
-            if self.STATE.ID == self.STATE_MODE1.ID: # move to IDLE
-                next_state = copy.copy(self.STATE_IDLE)
-                writeCommandAsString( self.ASSM_CMDS.AKNW )
-            elif self.STATE.ID == self.STATE_MODE2.ID: # move to IDLE
-                next_state = copy.copy(self.STATE_IDLE)
-                writeCommandAsString( self.ASSM_CMDS.AKNW )
-            elif self.STATE.ID == self.STATE_MODE3.ID: # move to IDLE
-                next_state = copy.copy(self.STATE_IDLE)
-                writeCommandAsString( self.ASSM_CMDS.AKNW )
-            elif self.STATE.ID == self.STATE_MODE4.ID: # move to IDLE
-                next_state = copy.copy(self.STATE_IDLE)
-                writeCommandAsString( self.ASSM_CMDS.AKNW )
-            elif self.STATE.ID == self.STATE_MODE5.ID: # move to IDLE
-                next_state = copy.copy(self.STATE_IDLE)
-                writeCommandAsString( self.ASSM_CMDS.AKNW )
-            elif self.STATE.ID == self.STATE_MODE6.ID: # move to IDLE
-                next_state = copy.copy(self.STATE_IDLE)
-                writeCommandAsString( self.ASSM_CMDS.AKNW )
-            elif self.STATE.ID == self.STATE_MODE7.ID: # move to IDLE
-                next_state = copy.copy(self.STATE_IDLE)
-                writeCommandAsString( self.ASSM_CMDS.AKNW )
+            print( self.CMDS.STOP.TAG ) # DEBUG print out; delete later
+            if self.STATE.ID == self.STATES.MODE1.ID: # move to IDLE
+                next_state = self.STATES.IDLE.COPY( ) # switch
+                self.SERIAL.writeTAG( self.CMDS.AKNW )
+            elif self.STATE.ID == self.STATES.MODE2.ID: # move to IDLE
+                next_state = self.STATES.IDLE.COPY( ) # switch
+                self.SERIAL.writeTAG( self.CMDS.AKNW )
+            elif self.STATE.ID == self.STATES.MODE3.ID: # move to IDLE
+                next_state = self.STATES.IDLE.COPY( ) # switch
+                self.SERIAL.writeTAG( self.CMDS.AKNW )
+            elif self.STATE.ID == self.STATES.MODE4.ID: # move to IDLE
+                next_state = self.STATES.IDLE.COPY( )  # switch
+                self.SERIAL.writeTAG( self.CMDS.AKNW )
+            elif self.STATE.ID == self.STATES.MODE5.ID: # move to IDLE
+                next_state = self.STATES.IDLE.COPY( ) # switch
+                self.SERIAL.writeTAG( self.CMDS.AKNW )
+            elif self.STATE.ID == self.STATES.MODE6.ID: # move to IDLE
+                next_state = self.STATES.IDLE.COPY( ) # switch
+                self.SERIAL.writeTAG( self.CMDS.AKNW )
+            elif self.STATE.ID == self.STATES.MODE7.ID: # move to IDLE
+                next_state = self.STATES.IDLE.COPY( ) # switch
+                self.SERIAL.writeTAG( self.CMDS.AKNW )
             else: # obvious useless
-                next_state = copy.copy(self.STATE)
+                next_state = self.STATE.COPY( )
 
         elif cmd.ID == self.CMDS.WAIT.ID:
-            print( self.CMDS.WAIT.TAG )
-            next_state = copy.copy(self.STATE) # obvious useless
+            print( self.CMDS.WAIT.TAG ) # DEBUG print out; delete later
+            next_state = self.STATE.COPY( ) # obvious useless
 
         elif cmd.ID == self.CMDS.EVENT.ID:
-            print( self.CMDS.EVENT.TAG )
-            next_state = copy.copy(self.STATE) # obvious useless
+            print( self.CMDS.EVENT.TAG ) # DEBUG print out; delete later
+            next_state = self.STATE.COPY( ) # obvious useless
 
         elif cmd.ID == self.CMDS.DONE.ID:
-            print( self.CMDS.DONE.TAG )
-            next_state = copy.copy(self.STATE) # obvious useless
+            print( self.CMDS.DONE.TAG ) # DEBUG print out; delete later
+            next_state = self.STATE.COPY( ) # obvious useless
 
         elif cmd.ID == self.CMDS.STATUS.ID:
-            print( self.CMDS.STATUS.TAG )
-            next_state = copy.copy(self.STATE) # obvious useless
-            writeStateAsStr( self.STATE )
+            print( self.CMDS.STATUS.TAG ) # DEBUG print out; delete later
+            next_state = self.STATE.COPY( ) # obvious useless
+            self.SERIAL.writeTAG( self.STATE )
 
-        elif cmd.ID == self.CMDS.CONNECT.ID:
-            print( self.CMDS.CONNECT.TAG )
-            next_state = copy.copy(self.STATE) # obvious useless
+        elif cmd.ID == self.CMDS.CNCT.ID:
+            print( self.CMDS.CNCT.TAG ) # DEBUG print out; delete later
+            next_state = self.STATE.COPY( ) # obvious useless
 
-        elif cmd.ID == self.CMDS.DISCNCT.ID:
-            print( self.CMDS.DISCNCT.TAG )
-            next_state = copy.copy(self.STATE) # obvious useless
+        elif cmd.ID == self.CMDS.DCNT.ID:
+            print( self.CMDS.DCNT.TAG ) # DEBUG print out; delete later
+            next_state = self.STATE.COPY( ) # obvious useless
 
         # RUN MODEs ..
 
-        elif cmd.ID == self.CMDS.RNMD1.ID:
-            print( self.ASSM_CMDS.RNMD1.TAG )
-            if self.STATE.ID != self.STATE_ERROR.ID:
-                print( self.STATE_MODE1.TAG )
-                next_state = copy.copy( self.STATE_MODE1 )
+        elif cmd.ID == self.CMDS.RMD1.ID:
+            print( self.ASSM_CMDS.RMD1.TAG ) # DEBUG print out; delete later
+            if self.STATE.ID != self.STATES.ERROR.ID:
+                print( self.STATES.MODE1.TAG ) # DEBUG print out; delete later
+                next_state = self.STATES.MODE1.COPY( ) # switch
             else:
-                next_state = copy.copy(self.STATE) # obvious useless
+                next_state = self.STATE.COPY( ) # obvious useless
 
-        elif cmd.ID == self.CMDS.RNMD2.ID:
-            print( self.ASSM_CMDS.RNMD2.TAG )
-            if self.STATE.ID != self.STATE_ERROR.ID:
-                print( self.STATE_MODE2.TAG )
-                next_state = copy.copy( self.STATE_MODE2 )
+        elif cmd.ID == self.CMDS.RMD2.ID:
+            print( self.ASSM_CMDS.RMD2.TAG ) # DEBUG print out; delete later
+            if self.STATE.ID != self.STATES.ERROR.ID:
+                print( self.STATES.MODE2.TAG ) # DEBUG print out; delete later
+                next_state = self.STATES.MODE2.COPY( ) # switch
             else:
-                next_state = copy.copy(self.STATE) # obvious useless
+                next_state = self.STATE.COPY( ) # obvious useless
 
-        elif cmd.ID == self.CMDS.RNMD3.ID:
-            print( self.ASSM_CMDS.RNMD3.TAG )
-            if self.STATE.ID != self.STATE_ERROR.ID:
-                print( self.STATE_MODE3.TAG )
-                next_state = copy.copy( self.STATE_MODE3 )
+        elif cmd.ID == self.CMDS.RMD3.ID:
+            print( self.ASSM_CMDS.RMD3.TAG ) # DEBUG print out; delete later
+            if self.STATE.ID != self.STATES.ERROR.ID:
+                print( self.STATES.MODE3.TAG ) # DEBUG print out; delete later
+                next_state = self.STATES.MODE3.COPY( ) # switch
             else:
-                next_state = copy.copy(self.STATE) # obvious useless
+                next_state = self.STATE.COPY( ) # obvious useless
 
-        elif cmd.ID == self.CMDS.RNMD4.ID:
-            print( self.ASSM_CMDS.RNMD4.TAG )
-            if self.STATE.ID != self.STATE_ERROR.ID:
-                print( self.STATE_MODE4.TAG )
-                next_state = copy.copy( self.STATE_MODE4 )
+        elif cmd.ID == self.CMDS.RMD4.ID:
+            print( self.ASSM_CMDS.RMD4.TAG ) # DEBUG print out; delete later
+            if self.STATE.ID != self.STATES.ERROR.ID:
+                print( self.STATES.MODE4.TAG ) # DEBUG print out; delete later
+                next_state = self.STATES.MODE4.COPY( ) # switch
             else:
-                next_state = copy.copy(self.STATE) # obvious useless
+                next_state = self.STATE.COPY( ) # obvious useless
 
-        elif cmd.ID == self.CMDS.RNMD5.ID:
-            print( self.ASSM_CMDS.RNMD5.TAG )
-            if self.STATE.ID != self.STATE_ERROR.ID:
-                print( self.STATE_MODE5.TAG )
-                next_state = copy.copy( self.STATE_MODE5 )
+        elif cmd.ID == self.CMDS.RMD5.ID:
+            print( self.ASSM_CMDS.RMD5.TAG ) # DEBUG print out; delete later
+            if self.STATE.ID != self.STATES.ERROR.ID:
+                print( self.STATES.MODE5.TAG ) # DEBUG print out; delete later
+                next_state = self.STATES.MODE5.COPY( ) # switch
             else:
-                next_state = copy.copy(self.STATE) # obvious useless
+                next_state = self.STATE.COPY( ) # obvious useless
 
-        elif cmd.ID == self.CMDS.RNMD6.ID:
-            print( self.ASSM_CMDS.RNMD6.TAG )
-            if self.STATE.ID != self.STATE_ERROR.ID:
-                print( self.STATE_MODE6.TAG )
-                next_state = copy.copy( self.STATE_MODE6 )
+        elif cmd.ID == self.CMDS.RMD6.ID:
+            print( self.ASSM_CMDS.RMD6.TAG ) # DEBUG print out; delete later
+            if self.STATE.ID != self.STATES.ERROR.ID:
+                print( self.STATES.MODE6.TAG ) # DEBUG print out; delete later
+                next_state = self.STATES.MODE6.COPY( ) # switch
             else:
-                next_state = copy.copy(self.STATE) # obvious useless
+                next_state = self.STATE.COPY( ) # obvious useless
 
-        elif cmd.ID == self.CMDS.RNMD7.ID:
-            print( self.ASSM_CMDS.RNMD7.TAG )
-            if self.STATE.ID != self.STATE_ERROR.ID:
-                print( self.STATE_MODE7.TAG )
-                next_state = copy.copy( self.STATE_MODE7 )
+        elif cmd.ID == self.CMDS.RMD7.ID:
+            print( self.ASSM_CMDS.RMD7.TAG ) # DEBUG print out; delete later
+            if self.STATE.ID != self.STATES.ERROR.ID:
+                print( self.STATES.MODE7.TAG ) # DEBUG print out; delete later
+                next_state = self.STATES.MODE7.COPY( ) # switch
             else:
-                next_state = copy.copy(self.STATE) # obvious useless
+                next_state = self.STATE.COPY( ) # obvious useless
 
         else:
             # print( self.CMDS.NULL.TAG )
-            next_state = copy.copy(self.STATE)  # obvious useless
+            next_state = self.STATE.COPY( )  # obvious useless
 
         return next_state
 
-    def process_STATE(self, state):
+    def process_State(self, state):
 
         self.STATE = state # obvious useless
 
-        next_cmd = copy.copy(self.CMDS.NULL) # next command is null
+        next_cmd = self.CMDS.NULL.COPY( ) # no new COMMAND from this STATE
 
-        if state.ID == self.STATE_ERROR.ID:
-            # print( self.STATE_ERROR.TAG )
+        if state.ID == self.STATES.ERROR.ID:
+            print( self.STATES.ERROR.TAG ) # DEBUG print out; delete later
             next_cmd = self.error( self.CMD )
 
-        elif state.ID == self.STATE_IDLE.ID:
-            # print( self.STATE_IDLE.TAG )
+        elif state.ID == self.STATES.IDLE.ID:
+            print( self.STATES.IDLE.TAG ) # DEBUG print out; delete later
             next_cmd = self.idle( self.CMD )
 
-        elif state.ID == self.STATE_MODE1.ID:
-            # print( self.STATE_MODE1.TAG )
+        elif state.ID == self.STATES.MODE1.ID:
+            print( self.STATES.MODE1.TAG ) # DEBUG print out; delete later
             next_cmd = self.runMODE1( self.CMD )
-        elif state.ID == self.STATE_MODE2.ID:
-            # print( self.STATE_MODE2.TAG )
+        elif state.ID == self.STATES.MODE2.ID:
+            print( self.STATES.MODE2.TAG ) # DEBUG print out; delete later
             next_cmd = self.runMODE2( self.CMD )
-        elif state.ID == self.STATE_MODE3.ID:
-            # print( self.STATE_MODE3.TAG )
+        elif state.ID == self.STATES.MODE3.ID:
+            print( self.STATES.MODE3.TAG ) # DEBUG print out; delete later
             next_cmd = self.runMODE3( self.CMD )
-        elif state.ID == self.STATE_MODE4.ID:
-            # print( self.STATE_MODE4.TAG )
+        elif state.ID == self.STATES.MODE4.ID:
+            print( self.STATES.MODE4.TAG ) # DEBUG print out; delete later
             next_cmd = self.runMODE4( self.CMD )
-        elif state.ID == self.STATE_MODE5.ID:
-            # print( self.STATE_MODE5.TAG )
+        elif state.ID == self.STATES.MODE5.ID:
+            print( self.STATES.MODE5.TAG ) # DEBUG print out; delete later
             next_cmd = self.runMODE5( self.CMD )
-        elif state.ID == self.STATE_MODE6.ID:
-            # print( self.STATE_MODE6.TAG )
+        elif state.ID == self.STATES.MODE6.ID:
+            print( self.STATES.MODE6.TAG ) # DEBUG print out; delete later
             next_cmd = self.runMODE6( self.CMD )
-        elif state.ID == self.STATE_MODE7.ID:
-            # print( self.STATE_MODE7.TAG )
+        elif state.ID == self.STATES.MODE7.ID:
+            print( self.STATES.MODE7.TAG ) # DEBUG print out; delete later
             next_cmd = self.runMODE7( self.CMD )
 
         else:
-            # print( "DEFAULT STATE" )
-            dmy = ""
-            # next_cmd is null ..
+            # print( "DEFAULT" ) # DEBUG print out; delete later
+            next_cmd = copy.copy(self.CMDS.NULL) # no new COMMAND from this STATE
+
         return next_cmd
 
-    # overload this method by own needs ..
-    def error(self, PSSM_COMMAND):
-        next_cmd = copy.copy(self.CMDS.NULL)
+    # Following methods can be extended by own code ..
+
+    def error(self, PSSM_Command):
+        next_cmd = self.CMDS.NULL.COPY( ) # no new COMMAND from this STATE
+        #
+        # own code to process goes here
+        #
         return next_cmd
 
-    # overload this method by own needs ..
-    def idle(self, PSSM_COMMAND):
-        next_cmd = copy.copy(self.CMDS.NULL)
+    def idle(self, PSSM_Command):
+        next_cmd = self.CMDS.NULL.COPY( ) # no new COMMAND from this STATE
+        #
+        # own code to process goes here
+        #
         return next_cmd
 
-    # overload this method by own needs ..
-    def runMODE1(self, PSSM_COMMAND):
-        next_cmd = copy.copy(self.CMDS.NULL)
+    def runMODE1(self, PSSM_Command):
+        next_cmd = self.CMDS.NULL.COPY( ) # no new COMMAND from this STATE
+        #
+        # own code to process goes here
+        #
         return next_cmd
 
-    # overload this method by own needs ..
-    def runMODE2(self, PSSM_COMMAND):
-        next_cmd = copy.copy(self.CMDS.NULL)
+    def runMODE2(self, PSSM_Command):
+        next_cmd = self.CMDS.NULL.COPY( ) # no new COMMAND from this STATE
+        #
+        # own code to process goes here
+        #
         return next_cmd
 
-    # overload this method by own needs ..
-    def runMODE3(self, PSSM_COMMAND):
-        next_cmd = copy.copy(self.CMDS.NULL)
+    def runMODE3(self, PSSM_Command):
+        next_cmd = self.CMDS.NULL.COPY( ) # no new COMMAND from this STATE
+        #
+        # own code to process goes here
+        #
         return next_cmd
 
-    # overload this method by own needs ..
-    def runMODE4(self, PSSM_COMMAND):
-        next_cmd = copy.copy(self.CMDS.NULL)
+    def runMODE4(self, PSSM_Command):
+        next_cmd = self.CMDS.NULL.COPY( ) # no new COMMAND from this STATE
+        #
+        # own code to process goes here
+        #
         return next_cmd
 
-    # overload this method by own needs ..
-    def runMODE5(self, PSSM_COMMAND):
-        next_cmd = copy.copy(self.CMDS.NULL)
+    def runMODE5(self, PSSM_Command):
+        next_cmd = self.CMDS.NULL.COPY( ) # no new COMMAND from this STATE
+        #
+        # own code to process goes here
+        #
         return next_cmd
 
-    # overload this method by own needs ..
-    def runMODE6(self, PSSM_COMMAND):
-        next_cmd = copy.copy(self.CMDS.NULL)
+    def runMODE6(self, PSSM_Command):
+        next_cmd = self.CMDS.NULL.COPY( ) # no new COMMAND from this STATE
+        #
+        # own code to process goes here
+        #
         return next_cmd
 
-    # overload this method by own needs ..
-    def runMODE7(self, PSSM_COMMAND):
-        next_cmd = copy.copy(self.CMDS.NULL)
+    def runMODE7(self, PSSM_Command):
+        next_cmd = self.CMDS.NULL.COPY( ) # no new COMMAND from this STATE
+        #
+        # own code to process goes here
+        #
         return next_cmd
