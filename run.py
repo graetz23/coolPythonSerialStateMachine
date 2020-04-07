@@ -31,11 +31,16 @@
 #
 import serial, time, os, pty, threading
 from threading import Timer, Thread, Event
-from coolPSSM import PSSM_Client, PSSM_Command
+from coolPSSM import PSSM_Client, PSSM_Command, PSSM_Message_Resolver, PSSM_XML
 
 pssm = PSSM_Client( "/dev/ttyACM0", 9600 ) # always put some global object
 
 while True:
+
+    XML = PSSM_XML( )
+
+    PSSM_MSG_RESOLVER = PSSM_Message_Resolver( )
+    CMD = PSSM_MSG_RESOLVER.tryBuildFromAll( "RMD1" )
 
     pssm.writeID( pssm.CMDS.RMD1 ) # always write IDs to ARDUINO
     time.sleep( 1 )
@@ -47,8 +52,16 @@ while True:
         pssm.writeID( PSSM_Command( "40", "A0" ) ) # create fly weight like
         time.sleep( 1 )
         answer = pssm.getANSWER( )
-
-        print( answer )
+        msg_obj = XML.bake( answer )
+        print( answer + " " + msg_obj.TAG + " " + msg_obj.DATA  )
+        f = float( msg_obj.DATA )
+        print( f )
+        print( answer + " " + msg_obj.TAG + " f => " + str( f )  )
+        pssm.writeID( PSSM_Command( "10", "STAT" ) ) # create fly weight like
+        time.sleep( 1 )
+        answer = pssm.getANSWER( )
+        msg_obj = XML.bake( answer )
+        print( answer + " " + msg_obj.TAG + " " + msg_obj.DATA  )
         i += 1
     # temp = pssm.getThreadedREAD()
     # print("A0: " + str(temp))

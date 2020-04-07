@@ -285,8 +285,7 @@ class PSSM_Hardware:
         self.GPIO12 = PSSM_Command( 72, "GPIO12" ) # arduino's analog A0
         self.GPIO13 = PSSM_Command( 73, "GPIO13" ) # arduino's analog A0
 
-# TOOL for exploding read COMMANDs baking PSSM_State & PSSM_Command objects ..
-class PSSM_XML:
+class PSSM_Message_Resolver:
 
     CMDS = None # obvious useless in python
 
@@ -302,35 +301,91 @@ class PSSM_XML:
 
         self.HARDWARE = PSSM_Hardware( ) # PROTOTYPEs that can be iterated
 
+    # return a list of all members
+    def membersOfObject(self, CMD_STAT_HW_OBJ):
+        # vars = filter(lambda a: not a.startswith('__'), dir(PSSM_Message
+        memberOBJ = []
+        for attribute, value in CMD_STAT_HW_OBJ.__dict__.items():
+            # print(attribute, '=', value)
+            pssm_msg = getattr(CMD_STAT_HW_OBJ, attribute)
+            # print( pssm_msg.TAG )
+            memberOBJ.append( pssm_msg )
+        return memberOBJ
+
+        # listMmember = iter( CMD_STAT_HW_OBJ )
+        # while i < len(listMmember):
+        #     print listMmember[ i ]
+        #     i += 1
+        i = 0
+        l = len(CMD_STAT_HW_OBJ)
+        while i < l:
+            var = CMD_STAT_HW_OBJ[i]
+            print( var )
+
+    def tryBuild(self, tag, CMD_STAT_HW_OBJ):
+        pssm_Msg = None
+        members = self.membersOfObject( CMD_STAT_HW_OBJ )
+        m = 0
+        isFound = False
+        while m < len(members) and not isFound:
+            prototype = members[ m ]
+            if prototype.TAG == tag:
+                isFound = True
+                pssm_Msg = prototype.COPY( ) # prototype pattern
+            m += 1
+        return pssm_Msg
+
+
+    def tryBuildFromAll(self, tag):
+        pssm_Msg = None
+        m = 0
+        isBuilt = False
+        while m < 3 and not isBuilt:
+            if m == 0:
+                pssm_Msg = self.tryBuild( tag, self.CMDS ) # 19 pcs
+            elif m == 1:
+                pssm_Msg = self.tryBuild( tag, self.STATES ) # 9 pcs
+            elif m == 2:
+                pssm_Msg = self.tryBuild( tag, self.HARDWARE ) # 20 pcs
+            else:
+                pass
+            if pssm_Msg != None:
+                isBuilt = True
+            m += 1
+        return pssm_Msg
+
+# TOOL for exploding read COMMANDs baking PSSM_State & PSSM_Command objects ..
+class PSSM_XML:
+
+    PSSM_MSG_RESOLVER = PSSM_Message_Resolver
+
+    def __init__(self):
+
+        self.PSSM_MSG_RESOLVER = PSSM_Message_Resolver()
+
     def bake(self, read):
         pssm_Msg = None
         tag = None
         data = None
 
         exploded = self.explode( read ) # the first is ALWAYS the TAG
+        i = 0
+        while i < len(exploded):
+            print( str(i) + " => " + exploded[ i ] )
+            i += 1
 
         if exploded != None:
             if len( exploded ) > 0:
 
-                tag = exploded[ 0 ] # the first is ALWAYS the TAG
+                tag = exploded[ 1 ] # the second is ALWAYS the TAG
 
-                if len( exploded ) == 3: # has DATA
-                    data = exploded[ 1 ] # if length ins three second is DATA
+                if len( exploded ) > 2: # has DATA
+                    data = exploded[ 2 ] # if length ins three second is DATA
 
-                i = 0
-                isBuilt = False
-                while i < 3 and not isBuilt:
-                    if i == 0:
-                        pssm_Msg = tryBuild( tag, PSSM_Commands( ) )
-                    elif i == 1:
-                        pssm_Msg = tryBuild( tag, PSSM_States( ) )
-                    elif i == 2:
-                        pssm_Msg = tryBuild( tag, PSSM_Hardware( ) )
+                print("tag  => " + tag )
+                print("data =>" + data )
 
-                    if pssm_Msg != None:
-                        isBuilt = True
-
-                    i += 1
+                pssm_Msg = self.PSSM_MSG_RESOLVER.tryBuildFromAll( tag );
 
         if pssm_Msg != None: # standardized message found
             if data != None:
@@ -350,25 +405,11 @@ class PSSM_XML:
         tmp2 = tmp1.replace( ">", " " ) #  TAG DATA /TAG
         tmp3 = tmp2.replace( "/", " " ) #  TAG DATA  TAG
         tmp4 = tmp3.strip( ) # TAG DATA  TAG
-        arr  = tmp3.split( " " ) # [ "TAG", "DATA", "TAG" ]
+        arr  = tmp3.split( " " )
+        # [ " ", "TAG", "DATA", " ", "TAG" ]
+        # OR
+        # [ " ", "TAG", " ", " " ]
         return arr
-
-    def membersOfObject(self, pssm_State_Cmd_HW):
-        vars = filter(lambda a: not a.startswith('__'), dir(pssm_State_Cmd_HW))
-        return vars
-
-    def tryBuild(self, tag, pssm_Msg_List):
-        pssm_Msg = None
-        vars = membersOfObject( pssm_Msg_List )
-        i = 0
-        isFound = False
-        while i < len(vars) and not isFound:
-            prototype = vars[ i ]
-            if prototype.TAG == tag:
-                isFound = True
-                pssm_Msg = prototype.COPY( )
-            i += 1
-        return pssm_Msg
 
 # Utilizes the serial console, especially the reading method for receiving
 # IDs and / or STRINGs. However, the reading methods should be always threaded.
@@ -391,6 +432,10 @@ class PSSM_Serial:
 
     def isOpen(self):
         return self.SER.isOpen()
+
+    def close(self):
+        if self.isOpen( ):
+            SER.close( )
 
     def getPort(self):
         port = None
